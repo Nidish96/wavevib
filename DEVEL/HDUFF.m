@@ -32,5 +32,5 @@ function [FNL, dFNLdU, dFNLdw] = HDUFF(Uw, kJ, cJ, gJ, h, Nt)
 
     FNL = AFT(ft, Nt, h, 't2f');
     dFNLdU = AFT(dfdu.*cst + dfdud.*sct, Nt, h, 't2f');
-    dFNLdw = AFT(dfdud.*sct/Uw(end), Nt, h, 't2f');
+    dFNLdw = AFT(dfdud.*udt/Uw(end), Nt, h, 't2f');
 end

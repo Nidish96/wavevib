@@ -103,7 +103,7 @@ function [Amat, dAmatdw, dAmatdxi, Fv, dFvdw, dFvdxi, JEV] = WVAMAT(wxi, h, pcs,
                     dLjdxi(hstnl+n, inds) = joints(k).dnldcofsdxi(h(ih)*wxi(1), wxi(2));
     
                     % Putting NL force
-                    kinds = hstart + ktn+(k-1)*Nwc+(1:Nwc);
+                    kinds = ktn+(k-1)*Nwc+(1:Nwc);
                     
                     Gj(kinds, hstnl+n) = joints(k).nlfcofs(h(ih)*wxi(1), wxi(2));
                     dGjdw(kinds, hstnl+n) = joints(k).dnlfcofsdw(h(ih)*wxi(1), wxi(2))*h(ih);
