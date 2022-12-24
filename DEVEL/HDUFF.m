@@ -1,4 +1,4 @@
-function [FNL, dFNLdU, dFNLdw] = HDUFF(Uw, kJ, cJ, gJ, h, Nt)
+function [FNL, dFNLdU, dFNLdw] = HDUFF(Uw, kJs, cJs, gJs, h, Nt)
 %HDUFF returns the Fourier Coefficients of the cubic spring along with
 %linear connections for given displacement coefficients.
 %
@@ -19,18 +19,52 @@ function [FNL, dFNLdU, dFNLdw] = HDUFF(Uw, kJ, cJ, gJ, h, Nt)
     if h(1)==0
         D1 = D1(2:end,2:end);
     end
+    Nd = length(Uw(1:end-1))/Nhc;
+    if rem(Nd,1)~=0
+        error('Nd not an integer. Value is %f .', Nd);
+    end
+    if all(size(kJs)~=Nd)
+        kJs = kJs(1)*eye(Nd);
+    end
+    if all(size(cJs)~=Nd)
+        cJs = cJs(1)*eye(Nd);
+    end
+    if all(size(gJs)~=Nd)
+        gJs = gJs(1)*eye(Nd);
+    end
 
-    ut = AFT(Uw(1:end-1), Nt, h, 'f2t');
-    udt = AFT(D1*Uw(1:end-1), Nt, h, 'f2t');
-    
     cst = AFT(eye(Nhc), Nt, h, 'f2t');
     sct = AFT(D1, Nt, h, 'f2t');
 
-    ft = kJ*ut + cJ*udt + gJ*ut.^3;
-    dfdu = kJ + 3*gJ*ut.^2;
-    dfdud = cJ*ones(Nt,1);
+    ut = AFT(reshape(Uw(1:end-1), Nd, Nhc)', Nt, h, 'f2t');
+    udt = AFT(D1*reshape(Uw(1:end-1), Nd, Nhc)', Nt, h, 'f2t');
+    
+    ft = ut*kJs' + udt*cJs' + ut.^3*gJs';
+    dfdu = kron(ones(Nt,1), kJs');
+    for di=1:Nd
+        dfdu(di:Nd:end,:) = dfdu(di:Nd:end,:)+3*ut(:,di).^2.*gJs(:,di)';
+    end
+    dfdud = kron(ones(Nt,1), cJs');
+    
+    FNL = reshape(AFT(ft, Nt, h, 't2f')', Nd*Nhc,1);
+    dFNLdU = zeros(Nhc*Nd);
+    dFNLdw = zeros(Nhc*Nd,1);
+    for di=1:Nd
+        for dj=1:Nd
+            dFNLdU(di:Nd:end, dj:Nd:end) = ...
+                AFT(dfdu(dj:Nd:end, di).*cst + dfdud(dj:Nd:end, di).*sct, Nt, h, 't2f');
+        end
+        dFNLdw(di:Nd:end) = AFT(sum(reshape(dfdud(:, di), Nd, Nt)'.*udt/Uw(end),2), Nt, h, 't2f');
+    end
 
-    FNL = AFT(ft, Nt, h, 't2f');
-    dFNLdU = AFT(dfdu.*cst + dfdud.*sct, Nt, h, 't2f');
-    dFNLdw = AFT(dfdud.*udt/Uw(end), Nt, h, 't2f');
+%     ut = AFT(Uw(1:end-1), Nt, h, 'f2t');
+%     udt = AFT(D1*Uw(1:end-1), Nt, h, 'f2t');
+% 
+%     ft = kJs*ut + cJs*udt + gJs*ut.^3;
+%     dfdu = kJs + 3*gJs*ut.^2;
+%     dfdud = cJs*ones(Nt,1);
+% 
+%     FNL = AFT(ft, Nt, h, 't2f');
+%     dFNLdU = AFT(dfdu.*cst + dfdud.*sct, Nt, h, 't2f');
+%     dFNLdw = AFT(dfdud.*udt/Uw(end), Nt, h, 't2f');
 end
