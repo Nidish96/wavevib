@@ -11,12 +11,13 @@ The "EXAMPLES" folder contains examples with most of the core functionality.
 
 The "DEVEL" folder is for development purposes. Collaborations are welcome.
 
-TODO: 
-1. Stability Implementation
-2. Quasi-Periodic Calculations
-3. 3D frame joint constitutions
-4. Joints connecting multiple pieces
-5. More detailed examples
+TODO (in no particular order): 
+1. 3D frame joint constitutions
+2. EPMC Implementation
+3. Joints connecting multiple pieces
+4. More detailed examples
+5. Stability Implementation
+6. Quasi-Periodic Calculations
 
 [1] https://link.springer.com/article/10.1007/s11071-022-07765-0
 
