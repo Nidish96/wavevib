@@ -187,7 +187,7 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
         pi = find(arrayfun(@(p) prod(excs(n).i-p.irange)<=0, pcs));  % Piece of excitation
         excs(n).pi = pi;
 
-        pcs(pi).exci = [pcs(pi).exci; excs(n).i];
+        pcs(pi).exci = [pcs(pi).exci; excs(n).i-pcs(pi).irange(1)+1];
         pcs(pi).excnh = [pcs(pi).excnh; excs(n).nh];
         pcs(pi).exccofs = {pcs(pi).exccofs{:}; 
             {excs(n).rcofs, excs(n).drcofsdw, excs(n).drcofsdxi}};

@@ -11,6 +11,9 @@ The "EXAMPLES" folder contains examples with most of the core functionality.
 
 The "DEVEL" folder is for development purposes. Collaborations are welcome.
 
+BUGFIXES TODO:
+1. Multiharmonic excitation at single point has to be implemented
+
 TODO (in no particular order): 
 1. 3D frame joint constitutions
 2. EPMC Implementation

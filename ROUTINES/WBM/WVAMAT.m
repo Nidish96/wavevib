@@ -158,7 +158,7 @@ function [Amat, dAmatdw, dAmatdxi, Fv, dFvdw, dFvdxi, JEV] = WVAMAT(wxi, h, pcs,
     
                     Amat(ktn+(n-1)*Nwc+(1:Nwc), inds) = joints(n).cofs(h(ih)*wxi(1), wxi(2));
                     dAmatdw(ktn+(n-1)*Nwc+(1:Nwc), inds) = joints(n).dcofsdw(h(ih)*wxi(1), wxi(2))*h(ih);
-                    dAmatdw(ktn+(n-1)*Nwc+(1:Nwc), inds) = joints(n).dcofsdxi(h(ih)*wxi(1), wxi(2));
+                    dAmatdxi(ktn+(n-1)*Nwc+(1:Nwc), inds) = joints(n).dcofsdxi(h(ih)*wxi(1), wxi(2));
                 otherwise
                     error('Needs to be implemented still.');
             end
