@@ -33,11 +33,11 @@ function [FNL, dFNLdU, dFNLdw] = HDUFF(Uw, kJs, cJs, gJs, h, Nt)
         gJs = gJs(1)*eye(Nd);
     end
 
-    cst = AFT(eye(Nhc), Nt, h, 'f2t');
-    sct = AFT(D1, Nt, h, 'f2t');
+    cst = AFT(eye(Nhc), h, Nt, 'f2t');
+    sct = AFT(D1, h, Nt, 'f2t');
 
-    ut = AFT(reshape(Uw(1:end-1), Nd, Nhc)', Nt, h, 'f2t');
-    udt = AFT(D1*reshape(Uw(1:end-1), Nd, Nhc)', Nt, h, 'f2t');
+    ut = AFT(reshape(Uw(1:end-1), Nd, Nhc)', h, Nt, 'f2t');
+    udt = AFT(D1*reshape(Uw(1:end-1), Nd, Nhc)', h, Nt, 'f2t');
     
     ft = ut*kJs' + udt*cJs' + ut.^3*gJs';
     dfdu = kron(ones(Nt,1), kJs');
@@ -46,15 +46,15 @@ function [FNL, dFNLdU, dFNLdw] = HDUFF(Uw, kJs, cJs, gJs, h, Nt)
     end
     dfdud = kron(ones(Nt,1), cJs');
     
-    FNL = reshape(AFT(ft, Nt, h, 't2f')', Nd*Nhc,1);
+    FNL = reshape(AFT(ft, h, Nt, 't2f')', Nd*Nhc,1);
     dFNLdU = zeros(Nhc*Nd);
     dFNLdw = zeros(Nhc*Nd,1);
     for di=1:Nd
         for dj=1:Nd
             dFNLdU(di:Nd:end, dj:Nd:end) = ...
-                AFT(dfdu(dj:Nd:end, di).*cst + dfdud(dj:Nd:end, di).*sct, Nt, h, 't2f');
+                AFT(dfdu(dj:Nd:end, di).*cst + dfdud(dj:Nd:end, di).*sct, h, Nt, 't2f');
         end
-        dFNLdw(di:Nd:end) = AFT(sum(reshape(dfdud(:, di), Nd, Nt)'.*udt/Uw(end),2), Nt, h, 't2f');
+        dFNLdw(di:Nd:end) = AFT(sum(reshape(dfdud(:, di), Nd, Nt)'.*udt/Uw(end),2), h, Nt, 't2f');
     end
 
 %     ut = AFT(Uw(1:end-1), Nt, h, 'f2t');
