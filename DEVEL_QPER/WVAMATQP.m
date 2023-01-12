@@ -179,7 +179,7 @@ function [Amat, dAmatdw, dAmatdxi, Fv, dFvdw, dFvdxi, JEV] = WVAMATQP(wxi, h, pc
     
                     Lj{n}((ih-1)*nld+(1:nld), inds) = joints(k).nldcofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  % (nld,Nwc)
                     dLjdw{n}((ih-1)*nld+(1:nld), inds,:) = reshape(cell2mat(arrayfun(@(a) joints(k).dnldcofsdw(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*h(ih,a), ...
-                        1:Nc, 'UniformOutput', false)), nld,Nwc,Nc);  %(nld,Nwc,Nc)
+                        1:Nc, 'UniformOutput', false)), nld,2*Nwc,Nc);  %(nld,Nwc,Nc)
                     dLjdxi{n}((ih-1)*nld+(1:nld), inds,:) = joints(k).dnldcofsdxi(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  %(nld,Nwc,Npar)
     
                     % Putting NL force
@@ -204,7 +204,7 @@ function [Amat, dAmatdw, dAmatdxi, Fv, dFvdw, dFvdxi, JEV] = WVAMATQP(wxi, h, pc
 
     %% Convert to Fully Real Representation
     if length(varargin)>=1 && varargin{1}=='r'
-        Nhc = sum((h==0)+2*(h~=0));
+        Nhc = sum(all(h==0, 2)+2*any(h~=0, 2));
         [zinds,hinds,rinds0,rinds,iinds] = HINDS(Npts*Nwc, h);
 
         Amatc = Amat;

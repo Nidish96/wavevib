@@ -3,7 +3,7 @@ clear all
 addpath('../ROUTINES/SOLVERS/')
 
 %% 
-h = 1:15;
+h = [1 0;0 1];
 Nt = 128;
 
 Ey = 2.62e11;
@@ -46,92 +46,51 @@ cofs = @(w,xi) [1j*[1 -1 0 0];1 -1 -1 1];
 %     'dnlfcofsdxi', @(w,xi) -Klib.dKdxi(w,xi)./(Klib.K(w,xi).^2+eps).*[1; 0], ...
 %     'nldcofs', @(w,xi) [1 1 -1 -1]);
 nljoints = struct('type', 2, 'i', 3, 'j', 4, 'cofs', cofs, ...
-    'nl', @(Uw) HDUFF(Uw, kJ, cJ, gJ, h, Nt), ...
+    'nl', @(Uw) QPHDUFF(Uw, kJ, cJ, gJ, h, Nt), ...
     'nlfcofs', @(w,xi) 1./(Klib.K(w,xi)*Ey*Ar).*[1; 0], ...
     'nldcofs', @(w,xi) [1 1 -1 -1]);
 %% Excitation
 % excs = struct('i', 2, 'nh', 1, 'rcofs', @(w,xi) (1/2/(2j*(Klib.K(w,xi)+eps)*Ey*Ar))*[-1;1], ...
 %     'drcofsdw', @(w,xi) (-Klib.dKdw(w,xi)/2/(2j*(Klib.K(w,xi)^2+eps)*Ey*Ar))*[-1;1], ...
 %     'drcofsdxi', @(w,xi) (-Klib.dKdxi(w,xi)/2/(2j*(Klib.K(w,xi)^2+eps)*Ey*Ar))*[-1;1]);
-excs = struct('i', 2, 'nh', 1, 'rcofs', @(w,xi) (1/2/(2j*(Klib.K(w,xi)+eps)*Ey*Ar))*[-1;1]);
+excs = struct('i', 2, 'nh', [1 0], 'rcofs', @(w,xi) (1/2/(2j*(Klib.K(w,xi)+eps)*Ey*Ar))*[-1;1]);
 
 %% Preprocess Everything
 [~, ~, linjoints, ~, ~] = WBPREPROC(pcs, bcs, linjoints, excs, Klib);
 [~, ~, fusjoints, ~, ~] = WBPREPROC(pcs, bcs, fusjoints, excs, Klib);
 [pcs, bcs, nljoints, excs, Klib] = WBPREPROC(pcs, bcs, nljoints, excs, Klib);
 
-%% Conduct HB
+%% Setup Properties for HB
 Famp = 150e5;
 Npts = pcs(end).irange(end);
 Npcs = length(pcs);
 Nwc = 2;
-Nh = length(h);
-Nhc = sum((h==0)+2*(h~=0));
+Nh = size(h,1);
+Nhc = sum(all(h==0, 2)+2*any(h~=0, 2));
 
 Wst = 78e3;
-Wen = 100e3;
-dw = 0.1;
 
-Copt = struct('Nmax', 100, 'angopt', 2e-1, 'DynDscale', 1);
+ari0 = zeros(pcs(end).irange(end)*Nwc*Nhc,1);
+ws = Wst*[1;pi];  % Frequencies
 
-%% HB Fresp - Reduced form
-Hs = {1, 1:3, 1:6, 1:12, 1:24, 1:48, 1:96};
-Nhs = cellfun(@(h) length(h), Hs);
-Ttks1 = zeros(size(Hs));
-% tic
-for hi=1:length(Hs)
-    nljoints.nl = @(Uw) HDUFF(Uw, kJ, cJ, gJ, Hs{hi}, Nt);
-    Nhc = sum((Hs{hi}==0)+2*(Hs{hi}~=0));
-    ari0 = zeros(Npcs*Nwc*Nhc,1);
-    tic
-    ariwC = CONTINUE(@(ariw) WVHBRESFUNr(ariw, Famp, Hs{hi}, pcs, bcs, nljoints, Klib),  ...
-        ari0, Wst, Wen, dw, Copt);
-    Ttks1(hi) = toc;
+%% Conduct HB with full form
+opt = optimoptions('fsolve', 'SpecifyObjectiveGradient', true, 'Display', 'iter');
+aris = fsolve(@(ari) WVHBRESFUNQP([ari; ws], Famp, h, pcs, bcs, nljoints, Klib), ari0, opt);
+[zinds,hinds,rinds0,rinds,iinds] = HINDS(Npts*Nwc, h);
+acso = zeros(Npts*Nh, 1);
+acso([zinds; hinds]) = [aris(rinds0); aris(rinds)+1j*aris(iinds)];
 
-    fprintf('Done %d\n', hi);
-end
-% tk1=toc;
+%% Conduct HB with reduced form
+ari0r = zeros(length(pcs)*Nwc*Nhc, 1);
+opt = optimoptions('fsolve', 'SpecifyObjectiveGradient', true, 'Display', 'iter');
+arisr = fsolve(@(ari) WVHBRESFUNrQP([ari; ws], Famp, h, pcs, bcs, nljoints, Klib), ari0r, opt);
 
 [zinds,hinds,rinds0,rinds,iinds] = HINDS(Npcs*Nwc, h);
-acC1 = zeros(Npcs*Nwc*Nh+1, size(ariwC,2));
-acC1([zinds hinds end], :) = [ariwC(rinds0,:); ariwC(rinds,:)+1j*ariwC(iinds,:);ariwC(end,:)];
+acsr = zeros(Npcs*Nh, 1);
+acsr([zinds; hinds]) = [arisr(rinds0); arisr(rinds)+1j*arisr(iinds)];
 
-%% HB Fresp - Full form
-Ttks2 = zeros(size(Hs));
+[Rh, ~, ~, Ri] = MAPr2COMPS([ws;0],h,pcs,Klib);
 
-for hi=1:length(Hs)
-    nljoints.nl = @(Uw) HDUFF(Uw, kJ, cJ, gJ, Hs{hi}, Nt);
-    Nhc = sum((Hs{hi}==0)+2*(Hs{hi}~=0));
-    ari0 = zeros(Npts*Nwc*Nhc,1);
-
-    tic
-    ariwC = CONTINUE(@(ariw) WVHBRESFUN(ariw, Famp, Hs{hi}, pcs, bcs, nljoints, Klib),  ...
-        zeros(Npts*Nwc*Nhc,1), Wst, Wen, dw, Copt);
-    Ttks2(hi)=toc;
-
-    fprintf('Done %d\n', hi);
-end
-
-[zinds,hinds,rinds0,rinds,iinds] = HINDS(Npts*Nwc, h);
-acC2 = zeros(Npts*Nwc*Nh+1, size(ariwC,2));
-acC2([zinds hinds end], :) = [ariwC(rinds0,:); ariwC(rinds,:)+1j*ariwC(iinds,:);ariwC(end,:)];
-%%
-figure(1)
-clf()
-loglog(Nhs, [Ttks1;Ttks2], 'o-', 'LineWidth', 2); 
-grid on
-xlabel('Number of Harmonics')
-ylabel('Computation Time')
-legend('Naive Approach', 'Eliminated Approach')
+acs = Rh*acsr-Ri*Famp;
 
 
-opi1 = 3:4;
-opi2 = 9:10;
-figure(2)
-clf()
-plot(acC1(end,:)/1e3, abs(2*sum(acC1(opi1,:))), '.-'); hold on
-plot(acC2(end,:)/1e3, abs(2*sum(acC2(opi2,:))), 'o'); hold on
-xlim([80 81]);
-ylim([0.05 0.3])
-xlabel('Frequency (k rad/s)')
-ylabel('Response (m)')

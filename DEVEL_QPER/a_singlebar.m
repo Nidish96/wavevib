@@ -33,11 +33,20 @@ Wresa = (1:10)*pi/ell*sqrt(Ey/rho);  % Fix-Fix
 
 Nw = 1000;
 Ws = linspace(eps, Wresa(end), Nw);
-As = zeros(size(Amat,1), Nw);
+Asr = zeros(length(pcs)*2*size(h,1), Nw);
+As = zeros(pcs(end).irange(end)*2*size(h,1), Nw);
+
+Aso = zeros(pcs(end).irange(end)*2*size(h,1), Nw);
 for iw = 1:Nw
     Oms = Ws(iw)*[1;pi];
-    [Amat, ~, ~, Fv] = WVAMATQP([Oms;0],h,pcs,bcs,joints,Klib);
-    As(:, iw) = Amat\Fv;
+    [Amat, ~, ~, Fv] = WVAMATrQP([Oms;0],h,pcs,bcs,joints,Klib);
+    Asr(:, iw) = Amat\Fv;
+
+    [Rh, ~, ~, Ri] = MAPr2COMPS([Oms;0],h,pcs,Klib);
+    As(:, iw) = Rh*Asr(:, iw) - Ri;
+
+    [Amatf, ~, ~, Fvf] = WVAMATQP([Oms;0],h,pcs,bcs,joints,Klib);
+    Aso(:, iw) = Amatf\Fvf;    
 end
 
 %%
@@ -45,5 +54,8 @@ figure(1)
 clf()
 plot(Ws, abs(2*sum(As((excs(1).i-1)*2+(1:2),:))), '.-'); hold on
 plot(Ws*pi, abs(2*sum(As(pcs(end).irange(end)*2+(excs(1).i-1)*2+(1:2),:)))); hold on
+
+plot(Ws, abs(2*sum(Aso((excs(1).i-1)*2+(1:2),:))), 'o'); hold on
+plot(Ws*pi, abs(2*sum(Aso(pcs(end).irange(end)*2+(excs(1).i-1)*2+(1:2),:))), '--'); hold on
 
 set(gca, 'YScale', 'log')
