@@ -75,7 +75,7 @@ ws = Wst*[1;pi];  % Frequencies
 
 %% Conduct HB with full form
 opt = optimoptions('fsolve', 'SpecifyObjectiveGradient', true, 'Display', 'iter');
-aris = fsolve(@(ari) WVHBRESFUNQP([ari; ws], Famp, h, pcs, bcs, nljoints, Klib), ari0, opt);
+aris = fsolve(@(ari) WVHBRESFUN([ari; ws], Famp, h, pcs, bcs, nljoints, Klib), ari0, opt);
 [zinds,hinds,rinds0,rinds,iinds] = HINDS(Npts*Nwc, h);
 acso = zeros(Npts*Nh, 1);
 acso([zinds; hinds]) = [aris(rinds0); aris(rinds)+1j*aris(iinds)];
@@ -83,7 +83,7 @@ acso([zinds; hinds]) = [aris(rinds0); aris(rinds)+1j*aris(iinds)];
 %% Conduct HB with reduced form
 ari0r = zeros(length(pcs)*Nwc*Nhc, 1);
 opt = optimoptions('fsolve', 'SpecifyObjectiveGradient', true, 'Display', 'iter');
-arisr = fsolve(@(ari) WVHBRESFUNrQP([ari; ws], Famp, h, pcs, bcs, nljoints, Klib), ari0r, opt);
+arisr = fsolve(@(ari) WVHBRESFUNr([ari; ws], Famp, h, pcs, bcs, nljoints, Klib), ari0r, opt);
 
 [zinds,hinds,rinds0,rinds,iinds] = HINDS(Npcs*Nwc, h);
 acsr = zeros(Npcs*Nh, 1);
@@ -92,5 +92,6 @@ acsr([zinds; hinds]) = [arisr(rinds0); arisr(rinds)+1j*arisr(iinds)];
 [Rh, ~, ~, Ri] = MAPr2COMPS([ws;0],h,pcs,Klib);
 
 acs = Rh*acsr-Ri*Famp;
+
 
 

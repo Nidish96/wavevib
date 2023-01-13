@@ -46,7 +46,7 @@ excs = struct('i', 2, 'nh', 1, ...
 %'nh' sets the harmonic at which to apply the excitation
 
 %% Setup Joint
-h = [1 3];
+h = [1; 3];
 Nt = 128;
 
 kJs = diag([1e9 1e9]);

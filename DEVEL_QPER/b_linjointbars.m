@@ -1,5 +1,6 @@
 clc
 clear all
+addpath('../ROUTINES/WBM/')
 
 %% 
 Ey = 210e9;
@@ -39,7 +40,7 @@ Ws = linspace(eps, 1.5e5, Nw);
 As = zeros(pcs(end).irange(end)*2*size(h,1), Nw);
 for iw = 1:Nw
     Oms = Ws(iw)*[1;pi];
-    [Amat, ~, ~, Fv] = WVAMATQP([Oms;0],h,pcs,bcs,joints,Klib);
+    [Amat, ~, ~, Fv] = WVAMAT([Oms;0],h,pcs,bcs,joints,Klib);
     As(:, iw) = Amat\Fv;
 end
 

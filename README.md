@@ -4,6 +4,7 @@ WaveVib is intended to be a set of OCTAVE/MATLAB routines that can be used to st
 The main advantage with using this approach comes from the fact that the linear portions of the problem are represented without 
 any approximation (unlike weighted residual or variational approaches). Immediate use cases include jointed beams, trusses, 
 frame structures, fluid-filled columns, rotordynamics, etc.
++ Supports periodic as well as quasi-periodic response regimes
 
 A good starting place for the new user are the papers Balaji, Brake, Leamy (2022a,b) [1,2].
 

@@ -29,7 +29,7 @@ bcs = [struct('i', 1, 'cofs', @(w,xi) [1 1]);
     struct('i', 5, 'cofs', @(w,xi) [1 1])];
 
 %% Setup the Nonlinear Joint
-h = sort([1 3]);  % List of harmonics to consider for simulation. 
+h = sort([1; 3]);  % List of harmonics to consider for simulation. 
 Nt = 128;  % Number of points for Alternating Frequency-Time calculations.
 
 kJ = 1e9;

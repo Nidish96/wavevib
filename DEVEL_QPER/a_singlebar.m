@@ -25,7 +25,7 @@ excs = [struct('i', 2, 'nh', [0 1], 'rcofs', @(w,xi) (1/2/(2j*(Klib.K(w,xi)+eps)
 h = [1 0;0 1];
 
 Oms = [1e5; pi*1e5];
-[Amat, dAmatdw, dAmatdxi, Fv] = WVAMATrQP([Oms;0],h,pcs,bcs,joints,Klib);
+[Amat, dAmatdw, dAmatdxi, Fv] = WVAMATr([Oms;0],h,pcs,bcs,joints,Klib);
 
 %%
 Wresa = (1:10)*pi/ell*sqrt(Ey/rho);  % Fix-Fix
@@ -39,13 +39,13 @@ As = zeros(pcs(end).irange(end)*2*size(h,1), Nw);
 Aso = zeros(pcs(end).irange(end)*2*size(h,1), Nw);
 for iw = 1:Nw
     Oms = Ws(iw)*[1;pi];
-    [Amat, ~, ~, Fv] = WVAMATrQP([Oms;0],h,pcs,bcs,joints,Klib);
+    [Amat, ~, ~, Fv] = WVAMATr([Oms;0],h,pcs,bcs,joints,Klib);
     Asr(:, iw) = Amat\Fv;
 
     [Rh, ~, ~, Ri] = MAPr2COMPS([Oms;0],h,pcs,Klib);
     As(:, iw) = Rh*Asr(:, iw) - Ri;
 
-    [Amatf, ~, ~, Fvf] = WVAMATQP([Oms;0],h,pcs,bcs,joints,Klib);
+    [Amatf, ~, ~, Fvf] = WVAMAT([Oms;0],h,pcs,bcs,joints,Klib);
     Aso(:, iw) = Amatf\Fvf;    
 end
 
