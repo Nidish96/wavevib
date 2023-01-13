@@ -15,11 +15,12 @@ function [FNL, dFNLdU, dFNLdw] = QPHDUFF(Uw, kJs, cJs, gJs, h, Nt)
 %       dFNLdw  : (Nhc,1)
     
     Nhc = sum(all(h==0, 2)+2*any(h~=0, 2));
+    Nh = size(h,1);
     Nc = length(Uw)-Nhc;
     ws = Uw(end-Nc+1:end);
 
     D1 = kron(diag(h*ws), [0 1;-1 0]);  % Fourier Differentiation mx
-    dD1w = reshape(cell2mat(arrayfun(@(a) kron(diag(h(:,a)), [0 1;-1 0]), 1:Nc, 'UniformOutput', false)), Nhc, Nhc, Nc);
+    dD1w = reshape(cell2mat(arrayfun(@(a) kron(diag(h(:,a)), [0 1;-1 0]), 1:Nc, 'UniformOutput', false)), Nh*2, Nh*2, Nc);
     if all(h(1,:)==0)
         D1 = D1(2:end,2:end);
         dD1w = dD1w(2:end, 2:end, :);
