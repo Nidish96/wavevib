@@ -1,0 +1,73 @@
+% Created 2023-03-22 Wed 21:37
+% Intended LaTeX compiler: pdflatex
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{capt-of}
+\usepackage{hyperref}
+\usepackage{tcolorbox}
+\usepackage{minted}
+\usepackage[margin=1in]{geometry}
+\usepackage{xcolor}
+\author{Nidish Narayanaa Balaji}
+\date{\today}
+\title{WaveVib - An OCTAVE/MATLAB Toolbox for Wave-Based Modeling of Nonlinear Jointed Structures}
+\hypersetup{
+ pdfauthor={Nidish Narayanaa Balaji},
+ pdftitle={WaveVib - An OCTAVE/MATLAB Toolbox for Wave-Based Modeling of Nonlinear Jointed Structures},
+ pdfkeywords={},
+ pdfsubject={},
+ pdfcreator={Emacs 28.2 (Org mode 9.5.5)}, 
+ pdflang={English}}
+\makeatletter
+\newcommand{\citeprocitem}[2]{\hyper@linkstart{cite}{citeproc_bib_item_#1}#2\hyper@linkend}
+\makeatother
+
+\usepackage[notquote]{hanging}
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+
+\section{Introduction}
+\label{sec:orge1f31de}
+WaveVib is intended to be a set of OCTAVE/MATLAB routines that can be used to study wave-based linear and nonlinear structures. The main advantage with using this approach comes from the fact that the linear portions of the problem are represented without any approximation (unlike weighted residual or variational approaches). The interface supports both periodic as well as quasi-periodic steady state response regimes. Immediate use cases include jointed beams, trusses, frame structures, fluid-filled columns, rotordynamics, etc.
+
+A good starting place for the new user to the Wave-Based Modeling (WBM) framework \&/or this package are the papers \citeprocitem{1}{[1]}, \citeprocitem{2}{[2]}, upon which most of the rudiments of this package are based.
+\definecolor{osbe-bg}{HTML}{e5f5e5}\colorlet{osbe-fg}{black}\begin{quote}
+                              \begin{tcolorbox}[colback=osbe-bg,colframe=osbe-fg,title={Folders in the repository},sharp corners,boxrule=0.4pt]
+This is giving details about the different folders in the repository.
+\begin{itemize}
+\item DEVEL\_PER [Obsolete]:
+Contains development scripts used for development of the periodic response routines \& examples.
+\item DEVEL\_QPER:
+Contains development scripts used for development of the quasi-periodic response routines \& examples.
+\item EXAMPLES: Contians examples with most of the core functionality
+\item REPS: Contains miscellaneous reports (under REPn folders) and this main documentation (under the DOCS folder)
+\item ROUTINES: Contains the core routines of the package.
+\end{itemize}
+
+
+               \end{tcolorbox}
+\end{quote}
+\section{Programming Interface}
+\label{sec:org0d30ebf}
+\section{Examples}
+\label{sec:orgca7d00c}
+\section{{\bfseries\sffamily TODO} Desirable Features}
+\label{sec:org59a09dc}
+
+\section{References}
+\label{sec:org05d1d10}
+\hypertarget{citeproc_bib_item_1}{[1] N. N. Balaji, M. R. W. Brake, and M. J. Leamy, “Wave-based analysis of jointed elastic bars: Nonlinear periodic response,” \textit{Nonlinear dynamics}, vol. 110, no. 3, pp. 2005–2031, Nov. 2022, doi: \href{https://doi.org/10.1007/s11071-022-07765-0}{10.1007/s11071-022-07765-0}.}
+
+\hypertarget{citeproc_bib_item_2}{[2] N. N. Balaji, M. R. W. Brake, and M. J. Leamy, “Wave-based analysis of jointed elastic bars: Stability of nonlinear solutions,” \textit{Nonlinear dynamics}, vol. 111, no. 3, pp. 1971–1986, Feb. 2023, doi: \href{https://doi.org/10.1007/s11071-022-07969-4}{10.1007/s11071-022-07969-4}.}\bigskip
+\end{document}

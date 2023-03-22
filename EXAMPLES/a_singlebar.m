@@ -39,8 +39,8 @@ bcs = [struct('i', 1, 'cofs', @(w,xi) [1 1]); % fixed end at point 1
 % other examples)
 
 %% Compute determinant of linear Jacobian
-Nw = 1000;
-Ws = linspace(0, 1e5, Nw);
+Nw = 5000;
+Ws = linspace(0, 1e6, Nw);
 Ds = zeros(1,Nw);
 for iw=1:Nw
     Ds(iw) = WVLDETFUN([Ws(iw);0], 1, pcs, bcs, [], Klib);
@@ -52,3 +52,16 @@ clf()
 semilogy(Ws, Ds, '-')
 xlabel('Frequncy (rad/s)')
 ylabel('Jacobian Determinant')
+
+%% Plot Highest Mode Shape
+[pks, locs] = findpeaks(-Ds);
+Wpks = Ws(locs);
+Ks = Klib.K(Wpks,Wpks*0);
+
+Nx = 100;
+Xs = linspace(0, ell, Nx)';
+
+mi = 20;
+figure(2)
+clf()
+plot(Xs, sin(Ks(mi).*Xs), '.-');
