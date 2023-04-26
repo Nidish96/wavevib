@@ -1,5 +1,7 @@
 function [yout] = AFT(yin, h, Nt, dir)
-%QPAFT
+%AFT is the Generalized AFT routine that supports periodic as well as
+%quasi-periodic inputs, supporting both time-frequency ('t2f') as well as
+%frequency-time ('f2t') transformations.
 %
 %   USAGE :
 %       yin     : 't2f'(Nt^Nc, Ny) or 'f2t'(Nhc,Ny)
