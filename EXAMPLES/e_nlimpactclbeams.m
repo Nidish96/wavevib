@@ -55,7 +55,7 @@ excs = struct('i', 2, 'nh', 1, ...
 %'nh' sets the harmonic at which to apply the excitation
 
 %% Setup AFT parameters
-h = (0:5)';
+h = (1:5)';
 Nt = 2^10;
 
 %% Setup Joints
@@ -92,7 +92,6 @@ Famps = [0.4 1.0 2.5];  % 0.336, 0.336
 acC = cell(size(Famps));
 for fi=1:length(Famps)
     [Amat, ~, ~, Fv, ~, ~, JEV] = WVAMAT([Wst;0], h, pcs, bcs, joints, Klib, 'r');
-    return;
     ari0 = Amat\Fv;
 
     Copt.Dscale = [1e-6*ones(size(ari0));Wst];
@@ -105,17 +104,18 @@ for fi=1:length(Famps)
 end
 %% Plot Results
 opi = Npts*4*(h(1)==0)+(13:16);
-figure(1)
+figure(1)   
+set(gcf, 'Color', 'white')
 clf()
 aa = gobjects(size(Famps));
 for fi=1:length(Famps)
     subplot(2,1,1)
-    aa(fi)=plot(acC{fi}(end,:)/2/pi, abs(sum(2*acC{fi}(opi,:))), '.-'); hold on
-    legend(aa(fi), sprintf('F = %f N', Famps(fi)));
+    aa(fi)=plot(acC{fi}(end,:)/2/pi, abs(sum(2*acC{fi}(opi,:))), '-', 'LineWidth', 1.5); hold on
+    legend(aa(fi), sprintf('F = %.1f N', Famps(fi)));
     grid on
     ylabel('Response (m)')
     subplot(2,1,2)
-    plot(acC{fi}(end,:)/2/pi, rad2deg(angle(sum(2*acC{fi}(opi,:)))), '.-'); hold on
+    plot(acC{fi}(end,:)/2/pi, -rad2deg(angle(sum(2*acC{fi}(opi,:)))), '-', 'LineWidth', 1.5); hold on
     grid on
     ylabel('Phase (degs)')
 end
@@ -124,6 +124,6 @@ xlim(sort([Wst Wen]/2/pi))
 legend(aa, 'Location', 'northwest')
 subplot(2,1,2)
 xlim(sort([Wst Wen]/2/pi))
-set(gca, 'YTick', -180:90:180)
-ylim([-1 1]*180)
+set(gca, 'YTick', -180:45:0)
+ylim([-1 0]*180)
 xlabel('Frequency (rad/s)')
