@@ -1,4 +1,4 @@
-% Created 2023-03-22 Wed 21:37
+% Created 2023-03-27 Mon 12:46
 % Intended LaTeX compiler: pdflatex
 \documentclass[11pt]{article}
 \usepackage[utf8]{inputenc}
@@ -38,35 +38,49 @@
 
 
 \section{Introduction}
-\label{sec:orge1f31de}
+\label{sec:orga5deae1}
 WaveVib is intended to be a set of OCTAVE/MATLAB routines that can be used to study wave-based linear and nonlinear structures. The main advantage with using this approach comes from the fact that the linear portions of the problem are represented without any approximation (unlike weighted residual or variational approaches). The interface supports both periodic as well as quasi-periodic steady state response regimes. Immediate use cases include jointed beams, trusses, frame structures, fluid-filled columns, rotordynamics, etc.
 
 A good starting place for the new user to the Wave-Based Modeling (WBM) framework \&/or this package are the papers \citeprocitem{1}{[1]}, \citeprocitem{2}{[2]}, upon which most of the rudiments of this package are based.
-\definecolor{osbe-bg}{HTML}{e5f5e5}\colorlet{osbe-fg}{black}\begin{quote}
-                              \begin{tcolorbox}[colback=osbe-bg,colframe=osbe-fg,title={Folders in the repository},sharp corners,boxrule=0.4pt]
-This is giving details about the different folders in the repository.
-\begin{itemize}
-\item DEVEL\_PER [Obsolete]:
+\colorlet{osbe-bg}{white}\colorlet{osbe-fg}{blue}\begin{quote}
+                              \begin{tcolorbox}[colback=osbe-bg,colframe=osbe-fg,title={The different folders in the repository are,},sharp corners,boxrule=0.4pt]
+\begin{enumerate}
+\item \begingroup\color{blue}DEVEL\_PER\endgroup\, [Obsolete]
+
 Contains development scripts used for development of the periodic response routines \& examples.
-\item DEVEL\_QPER:
+\item \begingroup\color{blue}DEVEL\_QPER\endgroup\,
+
 Contains development scripts used for development of the quasi-periodic response routines \& examples.
-\item EXAMPLES: Contians examples with most of the core functionality
-\item REPS: Contains miscellaneous reports (under REPn folders) and this main documentation (under the DOCS folder)
-\item ROUTINES: Contains the core routines of the package.
-\end{itemize}
+\item \begingroup\color{blue}EXAMPLES\endgroup\,
+
+Contians examples with most of the core functionality
+\item \begingroup\color{blue}REPS\endgroup\,
+
+Contains miscellaneous reports (under REPn folders) and this main documentation (under the DOCS folder)
+\item \begingroup\color{blue}ROUTINES\endgroup\,
+
+Contains the core routines of the package.
+\end{enumerate}
 
 
                \end{tcolorbox}
 \end{quote}
 \section{Programming Interface}
-\label{sec:org0d30ebf}
+\label{sec:org79688ac}
 \section{Examples}
-\label{sec:orgca7d00c}
-\section{{\bfseries\sffamily TODO} Desirable Features}
-\label{sec:org59a09dc}
-
+\label{sec:orgf3d0375}
+\section{Desirable Features [0/6]}
+\label{sec:org5d93483}
+\begin{enumerate}
+\item{$\square$} 3D frame joint constitutions
+\item{$\square$} EPMC Implementation
+\item{$\square$} Joints connecting multiple pieces
+\item{$\square$} More detailed examples
+\item{$\square$} Stability Implementation
+\item{$\square$} Quasi-Periodic Calculations
+\end{enumerate}
 \section{References}
-\label{sec:org05d1d10}
+\label{sec:orga03becb}
 \hypertarget{citeproc_bib_item_1}{[1] N. N. Balaji, M. R. W. Brake, and M. J. Leamy, “Wave-based analysis of jointed elastic bars: Nonlinear periodic response,” \textit{Nonlinear dynamics}, vol. 110, no. 3, pp. 2005–2031, Nov. 2022, doi: \href{https://doi.org/10.1007/s11071-022-07765-0}{10.1007/s11071-022-07765-0}.}
 
 \hypertarget{citeproc_bib_item_2}{[2] N. N. Balaji, M. R. W. Brake, and M. J. Leamy, “Wave-based analysis of jointed elastic bars: Stability of nonlinear solutions,” \textit{Nonlinear dynamics}, vol. 111, no. 3, pp. 1971–1986, Feb. 2023, doi: \href{https://doi.org/10.1007/s11071-022-07969-4}{10.1007/s11071-022-07969-4}.}\bigskip

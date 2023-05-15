@@ -5,6 +5,8 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
         origcoords = [origcoords zeros(size(origcoords,1),3)];
         origcoords = origcoords(:,1:3);
     end
+    origids = cell2mat(arrayfun(@(i) ones(size(pcs(i).coords,1),1)*i, 1:length(pcs), 'UniformOutput', false)');
+    origcoords = [origcoords origids];  % last column is piece ID (1-indexed)
     syms w xi
     % 0. Preprocess Klib (for derivatives)
     for i=1:length(Klib)
@@ -63,7 +65,8 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
         pcs(i).irange = Nbef + [1 pcs(i).N];
         Nbef = Nbef + pcs(i).N;
     end
-    proccoords = cell2mat({pcs.coords}');
+    procids = cell2mat(arrayfun(@(i) ones(size(pcs(i).coords,1),1)*i, 1:length(pcs), 'UniformOutput', false)');
+    proccoords = [cell2mat({pcs.coords}') procids];
 
     % 2. Preprocess Boundary Conditions
     Nwc = size(pcs(1).wcomps,1);
@@ -74,6 +77,7 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
         if ~isfield(bcs(n), 'dcofsdxi') || isempty(bcs(n).dcofsdxi)
             bcs(n).dcofsdxi = matlabFunction(diff(bcs(n).cofs(w,xi), xi), 'Vars', [w xi]);
         end
+        bcs(n).nof = size(bcs(n).cofs(w,xi),1);
         if ~isfield(bcs(n), 'rih')
             bcs(n).rih = [];
         end
@@ -103,7 +107,7 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
                 case {1, 2}
                     joints(n).cofs = @(w,xi) [eye(Nwc) -eye(Nwc)];
                 otherwise
-                    error('Needs to be implemented still.');
+                    joints(n).cofs = @(w,xi) [eye(Nwc)/joints(n).type -repmat(eye(Nwc), 1,joints(n).type-1)];
             end
         end
         if ~isfield(joints(n), 'dcofsdw') || isempty(joints(n).dcofsdw)
@@ -112,6 +116,8 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
         if ~isfield(joints(n), 'dcofsdxi') || isempty(joints(n).dcofsdxi)
             joints(n).dcofsdxi = matlabFunction(diff(joints(n).cofs(w,xi), xi), 'Vars', [w xi]);
         end
+        joints(n).nof = size(joints(n).cofs(w,xi),1);
+
         if ~isfield(joints(n), 'rih')
             joints(n).rih = [];
         end
@@ -127,7 +133,6 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
                 joints(n).drhsdxi = matlabFunction(diff(joints(n).rhs(w,xi), xi), 'Vars', [w xi]);
             end
         end
-
         if ~isfield(joints(n), 'nl') || isempty(joints(n).nl)
             joints(n).nl = [];
         else
@@ -149,18 +154,29 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
         end
 
         % Account for new nodes included in model
-        mi = find(all(proccoords==origcoords(joints(n).i,:), 2));
-        mj = find(all(proccoords==origcoords(joints(n).j,:), 2));
         switch joints(n).type
             case {1, 2}
+                mi = find(all(proccoords==origcoords(joints(n).i,:), 2));
+                mj = find(all(proccoords==origcoords(joints(n).j,:), 2));
+
                 joints(n).i = mi(1);
                 mj = setdiff(mj, mi(1));
                 joints(n).j = mj(1);
+
+                joints(n).pi = find(arrayfun(@(p) prod(joints(n).i-p.irange)<=0, pcs));
+                joints(n).pj = find(arrayfun(@(p) prod(joints(n).j-p.irange)<=0, pcs));
             otherwise
-                error('Needs to be implemented still.');
+                ms = cell(joints(n).type,1);
+                joints(n).ps = zeros(1,joints(n).type);
+                for ii=1:joints(n).type
+                    ms{ii} = find(all(proccoords==origcoords(joints(n).is(ii),:), 2));
+                    if ii>1
+                        ms{ii} = setdiff(ms{ii}, ms{ii-1});
+                    end
+                    joints(n).is(ii) = ms{ii}(1);
+                    joints(n).ps(ii) = find(arrayfun(@(p) prod(joints(n).is(ii)-p.irange)<=0, pcs));
+                end
         end
-        joints(n).pi = find(arrayfun(@(p) prod(joints(n).i-p.irange)<=0, pcs));
-        joints(n).pj = find(arrayfun(@(p) prod(joints(n).j-p.irange)<=0, pcs));
     end
 
     % 4. Preprocess Excitation Information (and put into pcs)

@@ -8,7 +8,7 @@ set(0,'defaultTextInterpreter','latex');
 set(0, 'DefaultLegendInterpreter', 'latex');
 set(0,'defaultAxesFontSize',13)
 
-%DESCRIPTION: This is a nonlinear ointed Euler-Bernoulli Beam example
+%DESCRIPTION: This is a nonlinear jointed Euler-Bernoulli Beam example
 %similar to the jointed bar example.
 
 %% Setup Model

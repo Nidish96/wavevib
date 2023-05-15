@@ -116,7 +116,8 @@ Sopt = struct('flag',1,'predictor','tangent', ...
     'reversaltolerance',.1,...
     'stepmax',1e3,'eps',1e-7,'noconv_stepcor','red','errmax',3,...
     'Dscale',ones(length(x0)+1,1),...
-    'jac','full','dynamicDscale',0);
+    'jac','full','dynamicDscale',0,...
+    'Display',true);
 if nargin>5 && isstruct(varargin{1})
     % Adapt options if assigned
     tmp = varargin{1};
@@ -189,18 +190,23 @@ c = zref;   % c must make rank([J;c']) = n+1, Seydel suggests unit vectors
 Xold = X0;
 xi = 1;
 %% Find initial solution
-disp('=================================================================');
-disp('NLvib Version 1.3, Copyright (C) 2020 Malte Krack, Johann Gross');
-disp('This program comes with ABSOLUTELY NO WARRANTY.');
-disp('This is free software, and you are welcome to redistribute');
-disp('it under certain conditions, see gpl-3.0.txt.');
-disp('=================================================================');
-disp('Find initial solution.');
-disp('--------------------');
+if Sopt.Display
+    disp('=================================================================');
+    disp('NLvib Version 1.3, Copyright (C) 2020 Malte Krack, Johann Gross');
+    disp('This program comes with ABSOLUTELY NO WARRANTY.');
+    disp('This is free software, and you are welcome to redistribute');
+    disp('it under certain conditions, see gpl-3.0.txt.');
+    disp('=================================================================');
+    disp('Find initial solution.');
+    disp('--------------------');
+end
 
 % Relax maximum number of iterations constraint for first solution point
 solopt_tmp = Solopt;
 Solopt = optimset(solopt_tmp,'MaxIter',500,'Display','iter');
+if ~Sopt.Display
+    Solopt.Display = 'off';
+end
 
 % Solve nonlinear system of equations once for initial solution
 if Sopt.flag || isfield(Sopt,'init')&&Sopt.init.flag
@@ -246,15 +252,20 @@ for ij=1:length(new_fieldnames)
     Sol(1).(new_fieldnames{ij}) = ...
         tmp.(new_fieldnames{ij});
 end
-disp(['Continuation at ' num2str(X0(end)*Sopt.Dscale(end),'%.4f') ...
-    ', step size ' num2str(Sopt.ds*Sopt.Dscale(end)) '.']);
+
+if Sopt.Display
+    disp(['Continuation at ' num2str(X0(end)*Sopt.Dscale(end),'%.4f') ...
+        ', step size ' num2str(Sopt.ds*Sopt.Dscale(end)) '.']);
+end
 
 % Reset maximum number of iterations
 Solopt = solopt_tmp;
 %% Start continuation
-disp('--------------------');
-disp('Start continuation.');
-disp('--------------------');
+if Sopt.Display
+    disp('--------------------');
+    disp('Start continuation.');
+    disp('--------------------');
+end
 tic
 ierr = 0;
 istep = 2;
@@ -400,12 +411,16 @@ while istep<=Sopt.stepmax
                 Solinfo.NIT(istep:end) = [];
                 Solinfo.IEx(istep:end) = [];
                 Solinfo.FC(istep:end) = [];
-                disp(['No convergence, stopping ' ...
-                    'continuation.']);
+                if Sopt.Display
+                    disp(['No convergence, stopping ' ...
+                        'continuation.']);
+                end
                 break;
             else
-                disp(['No convergence, proceed computation with' ...
-                    ' unconverged solution norm(Rres)=' num2str(norm(Rext))]);
+                if Sopt.Display
+                    disp(['No convergence, proceed computation with' ...
+                        ' unconverged solution norm(Rres)=' num2str(norm(Rext))]);
+                end
                 ierr = 0;
             end
         else
@@ -419,18 +434,24 @@ while istep<=Sopt.stepmax
                 case 'red'
                     fact = ierr+1;
                     Sopt.ds = max(ds_ref/2^fact,Sopt.dsmin);
-                    disp(['No convergence, reduce stepsize to ds = ' ...
-                        num2str(Sopt.ds*Sopt.Dscale(end))]);
+                    if Sopt.Display
+                        disp(['No convergence, reduce stepsize to ds = ' ...
+                            num2str(Sopt.ds*Sopt.Dscale(end))]);
+                    end
                 case 'redinc'
                     fact = fix((ierr+1)/2)+1;
                     if mod(ierr,2)
                         Sopt.ds = max(ds_ref/2^fact,Sopt.dsmin);
-                        disp(['No convergence, reduce stepsize' ...
-                            ' to ds = ' num2str(Sopt.ds*Sopt.Dscale(end))]);
+                        if Sopt.Display
+                            disp(['No convergence, reduce stepsize' ...
+                                ' to ds = ' num2str(Sopt.ds*Sopt.Dscale(end))]);
+                        end
                     else
                         Sopt.ds = min(ds_ref*2^fact,Sopt.dsmax);
-                        disp(['No convergence, increase stepsize' ...
-                            ' to ds = ' num2str(Sopt.ds*Sopt.Dscale(end))]);
+                        if Sopt.Display
+                            disp(['No convergence, increase stepsize' ...
+                                ' to ds = ' num2str(Sopt.ds*Sopt.Dscale(end))]);
+                        end
                     end
                 case 'none'
                 otherwise
@@ -492,17 +513,22 @@ while istep<=Sopt.stepmax
         Solinfo.NIT(istep+1:end) = [];
         Solinfo.IEx(istep+1:end) = [];
         Solinfo.FC(istep+1:end) = [];
-        if any(term)
-            disp(['Terminating continuation since at least one of the ' ...
-                'termination criteria is met.']);
-        else
-            disp(['Terminating continuation since parameter end value ' ...
-                'is reached.']);
+
+        if Sopt.Display
+            if any(term)
+                disp(['Terminating continuation since at least one of the ' ...
+                    'termination criteria is met.']);
+            else
+                disp(['Terminating continuation since parameter end value ' ...
+                    'is reached.']);
+            end
         end
         break;
     else
-        disp(['Continuation at ' num2str(X0(end)*Sopt.Dscale(end),'%.4f') ...
-            ', step size ' num2str(Sopt.ds*Sopt.Dscale(end)) '.']);
+        if Sopt.Display
+            disp(['Continuation at ' num2str(X0(end)*Sopt.Dscale(end),'%.4f') ...
+                ', step size ' num2str(Sopt.ds*Sopt.Dscale(end)) '.']);
+        end
     end
     
     if istep==Sopt.stepmax
@@ -534,11 +560,13 @@ end
 %% Output computational effort
 Solinfo.ctime = toc;
 Solinfo.FCtotal = sum(Solinfo.FC);
-disp('--------------------');
-disp('COMPUTATIONAL EFFORT:');
-disp(['Total elapsed time (toc) is ',num2str(Solinfo.ctime,'%16.1f'),' s']);
-disp(['Total number of function evaluations is ', ...
-    num2str(Solinfo.FCtotal)]);
+if Sopt.Display
+    disp('--------------------');
+    disp('COMPUTATIONAL EFFORT:');
+    disp(['Total elapsed time (toc) is ',num2str(Solinfo.ctime,'%16.1f'),' s']);
+    disp(['Total number of function evaluations is ', ...
+        num2str(Solinfo.FCtotal)]);
+end
 end
 function [Rext,dRextdX] = extended_residual(X,Xref,zref,...
     fun_residual,Sopt)
@@ -546,6 +574,9 @@ function [Rext,dRextdX] = extended_residual(X,Xref,zref,...
 switch Sopt.jac
     case {'full','on'}
         [R,dRdX] = feval(fun_residual,diag(Sopt.Dscale)*X);
+    case {'xl', 'xlam'}
+        [R,dRdx,dRdlam] = feval(fun_residual,diag(Sopt.Dscale)*X);
+        dRdX = [dRdx dRdlam];
     case 'x'
         [R,dRdx] = feval(fun_residual,diag(Sopt.Dscale)*X);
         

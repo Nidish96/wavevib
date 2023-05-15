@@ -1,18 +1,20 @@
 function [FNL, dFNLdU, dFNLdw] = HDUFF(Uw, kJs, cJs, gJs, h, Nt)
 %HDUFF returns the Fourier Coefficients of the cubic spring along with
-%linear connections for given displacement coefficients.
+%linear connections for given displacement coefficients. Force that is
+%returned is:
+%           kJs * us + cJs * uds + gJs * us.^3
 %
 %   USAGE: 
 %       [FNL, dFNLdU, dFNLdw] = HDUFF(Uw, kJ, cJ, gJ, h, Nt);
 %   INPUTS:
-%       Uw      : (Nhc+1,1)
-%       kJ,cJ,gJ: (scalar)
+%       Uw      : (Nd*Nhc+1,1)
+%       kJ,cJ,gJ: (Nd,Nd)
 %       h       : (Nh,1)
 %       Nt      : (int)
 %   OUTPUTS:
-%       FNL     : (Nhc,1)
-%       dFNLdU  : (Nhc,Nhc)
-%       dFNLdw  : (Nhc,1)
+%       FNL     : (Nd*Nhc,1)
+%       dFNLdU  : (Nd*Nhc,Nd*Nhc)
+%       dFNLdw  : (Nd*Nhc,1)
     
     Nhc = sum((h==0)+2*(h~=0));
     D1 = kron(diag(h),[0 1;-1 0])*Uw(end);  % Fourier Differentiation mx
@@ -57,6 +59,7 @@ function [FNL, dFNLdU, dFNLdw] = HDUFF(Uw, kJs, cJs, gJs, h, Nt)
         dFNLdw(di:Nd:end) = AFT(sum(reshape(dfdud(:, di), Nd, Nt)'.*udt/Uw(end),2), h, Nt, 't2f');
     end
 
+%     % Simple Version
 %     ut = AFT(Uw(1:end-1), Nt, h, 'f2t');
 %     udt = AFT(D1*Uw(1:end-1), Nt, h, 'f2t');
 % 
