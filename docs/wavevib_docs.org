@@ -47,7 +47,7 @@ A schematic of the setup is shown below in fig. [[fig:iclbeamsetup]] and the mat
 |                   210 |             7680 | 3 \times 40    | 560, 445     | 560/6                 | (0.80, 1.1\times 10^{-4})        |              2.5 |                     110 |
 
 *** Code Overview
-The most important part of the code are from line 16 to line 107. The complete code is explained below in different blocks.
+The most important part of the code are from line 16 to line 107. The complete code is explained below in different blocks (click to expand each block).
 #+begin_Details "Declare Properties" :background-color "#c9c9c9" :title-color black
 Here we just assign variables to the properties that will be useful for declaring properties.
 #+NAME: cd:decl
