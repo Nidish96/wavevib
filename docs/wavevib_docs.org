@@ -48,7 +48,7 @@ A schematic of the setup is shown below in fig. [[fig:iclbeamsetup]] and the mat
 
 *** Code Overview
 The most important part of the code are from line 16 to line 107. The complete code is explained below in different blocks.
-#+begin_Details "Declare Properties"
+#+begin_Details "Declare Properties" :background-color "#c9c9c9" :title-color black
 Here we just assign variables to the properties that will be useful for declaring properties.
 #+NAME: cd:decl
 #+begin_src octave -n
@@ -72,7 +72,7 @@ Here we just assign variables to the properties that will be useful for declarin
   gap = 2.5e-3;   % 2.5e-3,   0.35,   0.35
 #+end_src
 #+end_Details
-#+begin_Details "Declare Dispersion Relationship" :background-color white
+#+begin_Details "Declare Dispersion Relationship" :background-color white :title-color "#2980b9"
 Here we declare the dispersion relationship that will be used in the model
 #+NAME: cd:disps
 #+begin_src octave +n
@@ -100,7 +100,7 @@ Here is an example of how to declare multiple dispersion relationships:
 	   -1j 2]; % -jK2
 #+end_src
 #+end_Details
-#+begin_Details "Setup the model, boundary conditions, and excitation"
+#+begin_Details "Setup the model, boundary conditions, and excitation" :background-color "#c9c9c9" :title-color black
 + Firstly, the difference "pieces" of the model are specified:
   #+NAME: cd:pcs
   #+begin_src octave +n
@@ -135,7 +135,7 @@ Here is an example of how to declare multiple dispersion relationships:
     %'nh' sets the harmonic at which to apply the excitation
   #+end_src
 #+end_Details
-#+begin_Details "Setup the Nonlinear Joint after Specifying AFT" :background-color white
+#+begin_Details "Setup the Nonlinear Joint after Specifying AFT" :background-color white :title-color "#2980b9"
 + We now specify the non-linear joint. This is done by first specifying the AFT (Alternating Frequency-Time) parameters:
   #+begin_src octave +n
     %% Setup AFT Parameters
@@ -166,7 +166,7 @@ Here is an example of how to declare multiple dispersion relationships:
   
   The 'nlfcofs' specifies the coefficient matrix that the results from the nonlinear force function are multiplied with before being added to the equations of motion. The nonlinear forces are added in the LHS of the equations.
 
-  #+begin_details "The nonlinearity function HCONTACT"
+  #+begin_details "The nonlinearity function HCONTACT" :background-color "#c9c9c9" :title-color black
   This function conducts AFT and evaluates the linear-penalty contact model and returns the harmonics of the force for a given set of displacement harmonics.
   The function is implemented in [[file:../EXAMPLES/HCONTACT.m][HCONTACT.m]].
   #+begin_src octave
@@ -216,7 +216,7 @@ Here is an example of how to declare multiple dispersion relationships:
 #+end_details
 #+end_Details
 
-#+begin_Details "Preprocess the model"
+#+begin_Details "Preprocess the model" :background-color "#c9c9c9" :title-color black
 After the above setup is done, it is necessary to preprocess the model. Some of the main things wavevib does at this juncture is the inclusion of repeated points (excitation point has to be repeated, for example), and then calculating the frequency (and parameter) derivatives of the provided dispersion and coefficient functions. These derivatives are computed in =WaveVib= through Matlab's =symbolic toolbox= and then stored as anonymous functions. This might make the =WBPREPROC= function slightly slow to call, but during execution of the linear or nonlinear analyses, no symbolics is used and will thus be quite fast. This is because symbolics are used to compute the expressions only, but are not saved - these expressions are converted to regular matlab expressions before saving them.
 #+begin_src octave +n
   %% Pre-Processing
@@ -225,7 +225,7 @@ After the above setup is done, it is necessary to preprocess the model. Some of 
 The user may check all the objects again now - they will contain additional information in a format that is easy for =WaveVib= to employ. Please do not call =WBPREPROC= again on the returned parameters as this will result in duplicated points, etc.
 #+end_Details
 
-#+begin_Details "Conduct Nonlinear Forced Response Analysis using Continuation" :background-color white
+#+begin_Details "Conduct Nonlinear Forced Response Analysis using Continuation" :background-color white :title-color "#2980b9"
 + First the necessary parameters for the continuation are setup:
   #+begin_src octave +n
     %% Setup continuation parameters
@@ -277,9 +277,9 @@ The user may check all the objects again now - they will contain additional info
   #+end_src
 #+end_Details
 
-#+begin_Details "Postprocessing"
+#+begin_Details "Postprocessing" :background-color "#c9c9c9" :title-color black
 The =WVEVALWCOFS= routine is provided to help with postprocessing the results. The function uses the complex wave coefficients =ac= and evaluates the solution at =Nx= points in each piece of the model. 
-#+begin_details "The =WVEVAlWCOFS= function" :background-color white
+#+begin_details "The WVEVAlWCOFS function" :background-color white :title-color "#2980b9"
 #+begin_src octave
   function [Us, Xs] = WVEVALWCOFS(ac, w, h, dL, Nx, pcs, Klib)
   %WVEVALWCOFS This is a routine for evaluating the wave coefficients at
@@ -337,6 +337,7 @@ The deflection shapes of the harmonic corresponding to column =hi= of the output
   end
 #+end_src
 #+end_Details
+It is recommended to try running [[file:../EXAMPLES/e_nlimpactclbeams.m][the code]] by modifying some of the parameters above after going through this. It must be noted that the continuation parameters may need to be tuned when some parameters such as excitation or frequencies, damping, etc. are changed. 
 *** Results
     Fig. [[fig:e_out]] plots the forced response results of this system (first harmonic) computed at three difference excitation amplitude levels. The expected behavior  corresponding to impact (linear until the gap is reached, followed by stiffening behavior) is observed. The tip displacement of the primary beam is plotted in the figures.
     #+NAME: fig:e_out
