@@ -15,10 +15,12 @@ A good starting place for the new user to the Wave-Based Modeling (WBM) framewor
 2. [[file:../EXAMPLES/][EXAMPLES]]
    Contains examples with most of the core functionality
 3. [[file:../REPS/][REPS]]
-   Contains miscellaneous reports (under REPn folders) and this main documentation (under the [[file:../REPS/DOCS/][DOCS]] folder)
-4. [[file:../DEVEL_QPER/][DEVEL\under{}QPER]]
+   Contains miscellaneous reports (under REPn folders)
+4. [[file:wavevib_docs.org][docs]]
+   Contains this main documentation
+5. [[file:../DEVEL_QPER/][DEVEL\under{}QPER]]
    Contains development scripts used for development of the quasi-periodic response routines & examples. 
-5. [[file:../DEVEL_PER/][DEVEL\under{}PER]] [Obsolete]
+6. [[file:../DEVEL_PER/][DEVEL\under{}PER]] [Obsolete]
    Contains development scripts used for development of the periodic response routines & examples.
 * COMMENT Programming Interface
 Coming soon...
