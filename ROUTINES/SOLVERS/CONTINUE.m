@@ -324,9 +324,9 @@ function [U, dUdlam, Ss, flag, Scall] = CONTINUE(func, u0, lam0, lam1, ds, varar
       fprintf('%d %f %f %e %d (%d)\n', n+1, U(end,n+1), ds, theta, its, eflag);
     end
     if n>1 && Copt.adapt==1
-        if abs(theta)>1.1*Copt.angopt % angle check
+        if abs(theta)>Copt.angopt % angle check
             ds = max(Copt.dsmin, ds/2);
-        elseif abs(theta)<0.9*Copt.angopt  % angle and convergence check
+        elseif abs(theta)<Copt.angopt  % angle and convergence check
             ds = min(max(ds*sqrt(Copt.itopt/its), Copt.dsmin), Copt.dsmax);
         end
 %         ds = min(max(ds*sqrt(Copt.itopt/its), Copt.dsmin), Copt.dsmax);

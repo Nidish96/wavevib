@@ -1,0 +1,67 @@
+% Created 2023-05-16 Tue 10:26
+% Intended LaTeX compiler: pdflatex
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{capt-of}
+\usepackage{hyperref}
+\usepackage{tcolorbox}
+\usepackage{minted}
+\usepackage[margin=1in]{geometry}
+\usepackage{xcolor}
+\author{Nidish Narayanaa Balaji}
+\date{\today}
+\title{Balancing zero harmonics in the Wave-Based Formalism}
+\hypersetup{
+ pdfauthor={Nidish Narayanaa Balaji},
+ pdftitle={Balancing zero harmonics in the Wave-Based Formalism},
+ pdfkeywords={},
+ pdfsubject={},
+ pdfcreator={Emacs 29.0.90 (Org mode 9.6.3)}, 
+ pdflang={English}}
+\begin{document}
+
+\maketitle
+I will take the example of the Euler Bernoulli Beam whose dispersion relationship is given by
+\begin{equation}
+\label{eq:org5c8404b}
+k = {\left( \frac{\rho A_r}{E_y I_y} w^2 \right)}^{1/4}.
+\end{equation}
+The solution is expanded through the wave-based formalism as,
+\begin{equation}
+\label{eq:org12cf09e}
+u(x,t) = (a_1^+ e^{kx} + a_1^- e^{-kx} + a_2^+ e^{ikx} + a_2^- e^{-ikx}) e^{-i\omega t} + c.c.,
+\end{equation}
+where \(a_1^{\pm}\) and \(a_2^{\pm}\) are the evanescent and traveling wave components respectively. 
+
+Considering a joint between two points, say \(A\) and \(B\), with relative displacement denoted by \(\delta u(x,t)\rvert_{x=x_J}\), the joint force balance equation can be written as,
+\begin{equation}
+\label{eq:org802ae02}
+V(x,t)\rvert_{x=x_J} = -E_y I_y \frac{\partial^3 u}{\partial x^3} = f_{joint} (\delta u ),
+\end{equation}
+where \(f_{joint}(\cdot)\) is the joint constitutive model, \(E_yI_y\) is the flexural rigidity, and \(V(x,t)\rvert_{x=x_J}\) is the shear force at the joint.
+
+Substituting the wave-based solution ansatz from eq. \ref{eq:org12cf09e} into eq. \ref{eq:org802ae02} yields,
+\begin{equation}
+\label{eq:org3f11885}
+-E_y I_y k(\omega)^3 \begin{bmatrix} 1 & -1 & -i & i & 0 & 0 & 0 & 0\\
+1 & -1 & -i & i & -1 & 1 & i & -i \end{bmatrix}
+\begin{bmatrix} a_1^+\\ a_1^-\\ a_2^+\\ a_2^-\\ b_1^+\\ b_1^-\\ b_2^+\\ b_2^- \end{bmatrix} =
+\begin{bmatrix} f_{joint}(\delta u)\\ 0 \end{bmatrix}.
+\end{equation}
+In the above vector equation, the first row equation represents the force balance from eq. \ref{eq:org802ae02} and the second row equation represents the fact that the interface force is identical across the joints.
+
+\begin{tcolorbox}[title={Question},colback=red!5!white,colframe=red!75!black, colbacktitle=yellow!50!red,coltitle=red!25!black, fonttitle=\bfseries,subtitle style={boxrule=0.4pt, colback=yellow!50!red!25!white}]
+When \(\omega\) is set to zero, \(k(\omega)=0\) (see eq. \ref{eq:org5c8404b}). As a consequence, eq. \ref{eq:org3f11885} represents a null expression (matrix in lhs multiplied by zero). In other words, this \textbf{requires} the static component of the joint force to be zero. Does this make sense or is something wrong? \textbf{What if I have a joint that provides a static force? How can I represent this in this formalism?}
+
+This also leads to the more general question of \textbf{can the wave based approach accommodate constant terms in the PDE?}
+
+\end{tcolorbox}
+\end{document}

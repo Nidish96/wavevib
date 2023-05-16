@@ -56,9 +56,9 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
         pcs(i).N = size(pcs(i).coords,1);  % Number of Elements
         pcs(i).L = vecnorm(diff(pcs(i).coords([1 end],:)));
         pcs(i).nhat = diff(pcs(i).coords([1 end],:))/pcs(i).L;
-        pcs(i).U = U;
-        pcs(i).S = S;
-        pcs(i).V = V;
+        pcs(i).S = S*vecnorm(U)*vecnorm(V);
+        pcs(i).V = V/vecnorm(V)*sign(U(end)-U(1));
+        pcs(i).U = U/vecnorm(U)*sign(U(end)-U(1));
 
         pcs(i).theta = atan2(vecnorm(pcs(i).nhat(1:2)), pcs(i).nhat(3));
         pcs(i).phi = atan2(pcs(i).nhat(2), pcs(i).nhat(1));
