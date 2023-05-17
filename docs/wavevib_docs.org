@@ -370,6 +370,8 @@ It is recommended to try running [[https://github.com/Nidish96/wavevib/tree/mast
 #+CITE_EXPORT: csl ieee.csl
 #+PRINT_BIBLIOGRAPHY: References
 
+This website was generated using org-mode on emacs with the Bigblow html theme from [[https://github.com/fniessen/org-html-themes][https://github.com/fniessen/org-html-themes]].
+
 
 #+BEGIN_EXPORT html
 <!-- <script type="text/javascript" src="./collcont_clkbls.js"></script> -->
