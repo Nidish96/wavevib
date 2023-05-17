@@ -353,13 +353,19 @@ It is recommended to try running [[https://github.com/Nidish96/wavevib/tree/mast
     [[./FIGS/E_outshape.png]]
     
     *Note*: All the code in [[https://github.com/Nidish96/wavevib/tree/master/EXAMPLES/e_nlimpactclbeams.m][the matlab script]] from line 107 onwards are merely postprocessing, and the user may choose to do this their own way also.
-* Desirable Features [2/6]
+* Development Avenues
+** TODO Desirable Features [2/6]
 1. [ ] 3D frame joint constitutions
 2. [ ] EPMC Implementation
 3. [X] Joints connecting multiple pieces
 4. [ ] More detailed examples
 5. [ ] Stability Implementation
 6. [X] Quasi-Periodic Calculations
+** TODO Bugfixes
+1. Multiharmonic excitation at single point has to be implemented
+2. Allow for simple handling of constant coefficient matrices (not functions of @(w,xi)).
+3. Find a way to properly handle the zero harmonics of boundary conditions.
+4. Fix the reduced representations (WVAMATr, WVHBRESFUNr)
 * References
 #+CITE_EXPORT: csl ieee.csl
 #+PRINT_BIBLIOGRAPHY: References
