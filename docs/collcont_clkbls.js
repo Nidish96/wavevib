@@ -1,3 +1,4 @@
+// var HS_STARTUP_FOLDED = true;
 var colls = document.getElementsByClassName("collapsible");
 
 function toggle_collapsible(coll){

@@ -3,6 +3,7 @@
 #+OPTIONS: startup:indent
 #+BIBLIOGRAPHY: wavevib_docs.bib
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-bigblow.setup
+#+INFOJS_OPT: view:showall
 # #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 # #+HTML_HEAD: <style> #content{max-width:1800px;}</style>
 
@@ -375,4 +376,5 @@ This website was generated using org-mode on emacs with the Bigblow html theme f
 
 #+BEGIN_EXPORT html
 <!-- <script type="text/javascript" src="./collcont_clkbls.js"></script> -->
+<script>var HS_STARTUP_FOLDED = true;</script>
 #+END_EXPORT
