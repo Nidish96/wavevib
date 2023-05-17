@@ -210,8 +210,8 @@ function [Amat, dAmatdw, dAmatdxi, Fv, dFvdw, dFvdxi, JEV] = WVAMATr(wxi, h, pcs
 
         % 3. Joints
         ktn = hstart_pc + sum(nofs);
-        nofs = [0 joints.nof];
         for n=1:length(joints)
+            nofs = [0 joints.nof];
             switch joints(n).type
                 case {1, 2}  % Binary Connection
                     inds = hstart_pt*0 + [(joints(n).i-1)*Nwc+(1:Nwc) (joints(n).j-1)*Nwc+(1:Nwc)];

@@ -28,10 +28,15 @@ pcs = [struct('coords', [0;0.28;ell/3], 'wcomps', wcomps);
 bcs = [struct('i', 1, 'cofs', @(w,xi) [1 1]);
     struct('i', 5, 'cofs', @(w,xi) [1 1])];
 
-%% Setup the Nonlinear Joint
+% Setup Excitation
+excs = struct('i', 2, ...
+    'rcofs', @(w,xi) (1/2/(2j*Klib.K(w,xi)*Ey*Ar))*[-1;1]);
+
+%% Setup AFT properties
 h = sort([1; 3]);  % List of harmonics to consider for simulation. 
 Nt = 128;  % Number of points for Alternating Frequency-Time calculations.
 
+%% Setup the Nonlinear Joint
 kJ = 1e9;
 cJ = 320;
 gJ = 1e8;
@@ -49,10 +54,6 @@ joints = struct('type', 2, 'i', 3, 'j', 4, 'cofs', cofs, ...
 % the nonlinear force function are multiplied with before being added to
 % the equations of motion. The nonlinear forces are added in the LHS of the
 % equations. 
-
-%% Setup Excitation
-excs = struct('i', 2, ...
-    'rcofs', @(w,xi) (1/2/(2j*Klib.K(w,xi)*Ey*Ar))*[-1;1]);
 
 %% Preprocess Everything
 [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib);

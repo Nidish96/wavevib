@@ -38,7 +38,7 @@ cofs = @(w,xi) [(1j*Klib.K(w,xi)*Ey*Ar)*[1, -1, 0, 0] +...
 % a is the vector of the wave coefficients of the two pts.
 joints = struct('type', 2, 'i', 3, 'j', 4, 'cofs', cofs);
 %NOTE: The 'type' parameter specifies how many points are joined at this
-%location. So far only type 2 has been implemented.
+%location.
 
 %% Setup Excitation
 excs = struct('i', 2, ...
@@ -48,7 +48,6 @@ excs = struct('i', 2, ...
 %   [I -I]*[a;b] = rcofs        represents the excitation.
 %   where "a" and "b" are the vector of wave coefficients just before and
 %   after the point of excitation.
-
 %% Preprocess Everything
 [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib);
 Nwc = size(wcomps,1);  % Number of wave components

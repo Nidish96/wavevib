@@ -7,6 +7,11 @@
 # #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
 # #+HTML_HEAD: <style> #content{max-width:1800px;}</style>
 
+#+BEGIN_EXPORT html
+<!-- <script type="text/javascript" src="./collcont_clkbls.js"></script> -->
+<script>var HS_STARTUP_FOLDED = true;</script>
+#+END_EXPORT
+
 * Introduction
 [[https://github.com/Nidish96/wavevib][WaveVib]] is intended to be a set of OCTAVE/MATLAB routines that can be used to study wave-based linear and nonlinear structures. The main advantage with using this approach comes from the fact that the linear portions of the problem are represented without any approximation (unlike weighted residual or variational approaches). The interface supports both periodic as well as quasi-periodic steady state response regimes. Immediate use cases include jointed beams, trusses, frame structures, fluid-filled columns, rotordynamics, etc.
 
@@ -27,14 +32,637 @@ A good starting place for the new user to the Wave-Based Modeling (WBM) framewor
 * COMMENT Programming Interface
 Coming soon...
 * [[https://github.com/Nidish96/wavevib/tree/master/EXAMPLES/][Examples]]
-** COMMENT Single Bar
-Coming soon...
-** COMMENT Linear-Jointed Bars
-Coming soon...
-** COMMENT Nonlinear-Jointed Bars
-Coming soon...
-** COMMENT Nonlinear-Jointed Euler-Bernoulli Beams
-Coming soon...
+** Single Bar
+<<sec:a_singbar>>
+This is by far the simplest example and can be used as a starting point to understand the usage of the tool. It conducts the analysis of a fixed-fixed 1D bar with the material properties in tab. [[tab:sbarmprops]].
+#+NAME: tab:sbarmprops
+#+CAPTION: Material Properties for the example in [[https://github.com/Nidish96/wavevib/tree/master/EXAMPLES/a_singlebar.m][https://github.com/Nidish96/wavevib/tree/master/EXAMPLES/a_singlebar.m]]
+| Young's Modulus (MPa) | Density (kg/m^3) | Length (m) |
+|-----------------------+------------------+------------|
+|                   262 |             1280 | 1          |
+*** Code Overview
+#+begin_Details "Add the necessary directories to Path and Setup the model parameters" :background-color "#c9c9c9" :title-color black
+#+begin_src octave -n
+  clc
+  clear all
+  addpath('../ROUTINES/SOLVERS/')
+  addpath('../ROUTINES/WBM/')
+
+  set(0,'defaultAxesTickLabelInterpreter', 'default');
+  set(0,'defaultTextInterpreter','latex');
+  set(0, 'DefaultLegendInterpreter', 'latex');
+  set(0,'defaultAxesFontSize',13)
+
+  %DESCRIPTION: This shows the most basic example of a 1D bar fixed at both
+  %ends. 
+
+  %% Setup model
+  Ey = 2.62e11;
+  rho = 1280;
+  ell = 1.0;  
+#+end_src
+#+end_Details
+#+begin_Details "Declare the dispersion relationship" :background-color white :title-color black
+The governing equations for the bar is
+#+NAME: eq:1dbar
+\begin{align}
+\rho \frac{\partial^2 u}{\partial t^2} - E_y \frac{\partial^2 u}{\partial x^2} &= 0 \qquad x\in (0, \ell)\\
+u &= 0 \qquad x=0, \ell.
+\end{align}
+Using the standard ansatz $u(x,t)=\frac{U}{2} e^{j(kx-\omega t)}+c.c.$, the continuum domain yields the dispersion relationship,
+#+NAME: eq:1ddisp
+\begin{equation}
+k(\omega) = \pm \frac{\omega}{\sqrt{E_y/\rho}}.
+\end{equation}
+This is provided to wavevib using the following code:
+#+begin_src octave +n
+  Klib = struct('K', @(w,xi) w/sqrt(Ey/rho));
+  wcomps = [1j 1;  % First component -> exp( j k x )
+	   -1j 1]; % Sec component   -> exp(-j k x )
+#+end_src
+=Klib= is meant to be an array of structures, with each element holding a field =K= storing a function handle to a dispersion relationship that is parameterized by frequency =w= and some parameters (could be a vector of parameters) =xi=.
+The matrix =wcomps= provides information about the different wave components. Each row corresponds to a different wave component (forward traveling and backward traveling axial waves in this case), with the first column being a premultiplier (typically $\pm 1, \pm j$) and the second column denoting the element of =Klib= to choose (here it is just 1). In the above, the two wave components are the forward traveling and backward traveling axial waves. Note that in the ansatz we have the temporal component occurring as $e^{-j\omega t}$, meaning $+j k$ implies forward traveling and $-j k$ implies backward traveling in this notation.
+
+Under this notation, the wave-based representation of the solution is,
+#+NAME: eq:wbr
+\begin{equation}
+u(x,t) = (a^+ e^{jkx}+a^- e^{-jkx})e^{-j\omega t} + c.c.
+\end{equation}
+#+end_Details
+#+begin_Details "Setup the wave-based pieces" :background-color "#c9c9c9" :title-color black
+Now we setup the different continuum "pieces" in the model. Here we just have a single piece.
+#+begin_src octave +n
+  % Setup "wave-based pieces"
+  pcs = struct('coords', [0;ell], 'wcomps', wcomps);
+  % Note: The coordinates can be 3D also. The rows are interpreted as
+  % individual points. Coordinates not given are assumed to be zeros.
+#+end_src
+The coordinates are strictly interpreted as though the rows are different points and columns (max. 3) are the cartesian coordinates of the point. If multiple columns are not given, they are assumed to be zero.
+
+The =wcomps= matrix created before is supplied at this point. Each piece is associated with wave components defined in such a fashion. Note that different pieces in a single model *can* have different wave components, but this functionality has to be checked and possibly debugged first.
+#+end_Details
+#+begin_Details "Setup the boundary conditions" :background-color white :title-color black
+A fixed boundary condition is given above in eq. [[eq:1dbar]]. Employing the ansatz (eq. [[eq:wbr]]) at such a point yields
+#+NAME: eq:fixbc
+\begin{equation}
+u(0,t) = 0 \implies \begin{bmatrix} 1 & 1 \end{bmatrix} \begin{bmatrix} a^+\\ a^- \end{bmatrix} = 0
+\end{equation}
+as the wave-based representation of this boundary condition. The following code provides this information for wavevib.
+#+begin_src octave +n
+  % Setup Boundary Conditions
+  bcs = [struct('i', 1, 'cofs', @(w,xi) [1 1]); % fixed end at point 1
+      struct('i', 2, 'cofs', @(w,xi) [1 1])]; % fixed end at point 2
+  % Note: The BC coefficients are given as function handles in two
+  % parameters, (w,xi). The first is interpreted as frequency and the second
+  % is left to the discretion of the user. The number of columns has to be
+  % equal to the number of wave components in each case. 
+#+end_src
+The parameter =i= denotes the point at which to apply the boundary condition (counted from the order given under the =pcs= structure), and =cofs= are the coefficients (functions of =(w,xi)=) as mentioned above.
+#+end_Details
+#+begin_Details "Preprocess the inputs" :background-color "#c9c9c9" :title-color black
+Now that the required inputs have been prepared, waveVib has to "preprocess" the inputs to generate useful information. It is in this step that wavevib generates the required gradients of the provided coefficients. These derivatives are computed in =WaveVib= through Matlab's =symbolic toolbox= and then stored as anonymous functions. This might make the =WBPREPROC= function slightly slow to call, but during execution of the linear or nonlinear analyses, no symbolics is used and will thus be quite fast. This is because symbolics are used to compute the expressions only, but are not saved - these expressions are converted to regular matlab expressions before saving them.
+#+begin_src octave +n
+  %% Preprocess inputs
+  % This step computes the analytical derivatives for expressions given above
+  [pcs, bcs, ~, ~, Klib] = WBPREPROC(pcs, bcs, [], [], Klib);
+  % Note: the empty inputs are used to specify joints and excitation (see the
+  % other examples)
+#+end_src
+#+end_Details
+#+begin_Details "Inspect the Linear Jacobian Determinant" :background-color "white" :title-color black
+The determinant of the linear Jacobian of this problem will have to be zero at resonance and non-zero elsewhere. We compute this at a range of frequency values and plot them.
+#+begin_src octave +n
+  %% Compute determinant of linear Jacobian
+  Nw = 5000;
+  Ws = linspace(0, 1e6, Nw);
+  Ds = zeros(1,Nw);
+  for iw=1:Nw
+      Ds(iw) = WVLDETFUN([Ws(iw);0], 1, pcs, bcs, [], Klib);
+  end
+
+  %% Plot
+  figure(1)
+  clf()
+  semilogy(Ws, Ds, '-')
+  xlabel('Frequncy (rad/s)')
+  ylabel('Jacobian Determinant')
+#+end_src
+
+At any such singular point, one may inspect the mode shape by looking at the null space of the matrix.
+#+end_Details
+*** Results
+Fig. [[fig:a-out]] presents the determinant plotted for different frequency values in log-scale. All the points where drop-offs are seen are the resonances.
+#+NAME: fig:a-out
+#+CAPTION: Jacobian determinant for the linear bar example
+#+ATTR_HTML: :width 600px
+[[./FIGS/a_out.png]]
+*** TODO Show mode-shapes in results
+** Linear-Jointed Bars
+<<sec:b_linjointedbars>>
+We will next look at the example of linear jointed bars. This is a simplified version of the nonlinear system considered in [cite:@balajiWavebasedAnalysisJointed2022].
+*** Code Overview
+#+begin_Details "Setup the parameters, dispersion, and boundary conditions" :background-color "#c9c9c9" :title-color black
+The initial setup is very similar to that in sec. [[sec:a_singbar]].
+#+begin_src octave -n
+  addpath('../ROUTINES/SOLVERS/')
+  addpath('../ROUTINES/WBM/')
+
+  set(0,'defaultAxesTickLabelInterpreter', 'default');
+  set(0,'defaultTextInterpreter','latex');
+  set(0, 'DefaultLegendInterpreter', 'latex');
+  set(0,'defaultAxesFontSize',13)
+
+  %DESCRIPTION: This shows the linear forced response computation for the 1D
+  %bar example considered in Balaji, Brake, Leamy (2022a,2022b)
+
+  %% Setup model
+  Ey = 2.62e11;
+  rho = 1280;
+  ell = 1.0;
+  Ar = 31.75e-3*54e-3;
+  Klib = struct('K', @(w,xi) w/sqrt(Ey/rho));
+  wcomps = [1j 1;  % First component -> exp( j k x )
+	   -1j 1]; % Sec component   -> exp(-j k x )
+
+  % Setup "wave-based pieces"
+  pcs = [struct('coords', [0;0.28;ell/3], 'wcomps', wcomps);
+      struct('coords', [ell/3;ell], 'wcomps', wcomps)];
+
+  % Setup Boundary Conditions (pts indexed as given above in sequence)
+  bcs = [struct('i', 1, 'cofs', @(w,xi) [1 1]);
+      struct('i', 5, 'cofs', @(w,xi) [1 1])];
+#+end_src
+The only difference here is that unlike the first example, this example consists of two pieces - one in $x\in [0,\ell/3]$ and the second in $x\in [\ell/3,\ell]$. These are provided by assigning =pcs= to an array of structs.
+#+end_Details
+#+begin_Details "Setup the linear joint" :background-color white :title-color black
+We now setup the joint and specify its linear properties (stiffness and damping coefficients). Note that the wave-based approach assumes the joint be treated as a measure-zero feature. This is a necessary condition since if the "joint" was not measure zero, then the dispersion relationship will no longer hold there and a different representation will be warranted there.
+#+begin_src octave +n
+  %% Setup the linear Joint
+  kJ = 1e9;
+  cJ = 320;
+  cofs = @(w,xi) [(1j*Klib.K(w,xi)*Ey*Ar)*[1, -1, 0, 0] +...
+      (kJ-1j*cJ*w)*[1 1 -1 -1];1, -1, -1, 1];
+  % Coefficients are to be supplied such that 
+  % COFS*a = 0    represents the joint, where
+  % a is the vector of the wave coefficients of the two pts.
+  joints = struct('type', 2, 'i', 3, 'j', 4, 'cofs', cofs);
+  %NOTE: The 'type' parameter specifies how many points are joined at this
+  %location.
+#+end_src
+A joint joining two points (a =type 2= joint) is specified by providing the two points that are connected and a coefficient matrix (function of =(w, xi)=) such that
+$$ cofs \begin{bmatrix} \bar{a}\\ \bar{b} \end{bmatrix} = \bar{0}, $$
+where $\bar{a}$ and $\bar{b}$ are the vector of wave coefficients at the two points involved. 
+#+end_Details
+#+begin_Details "Setup excitation" :background-color "#c9c9c9" :title-color black
+Unlike the previous example, this system also has excitation that we setup using the following piece of code:
+#+begin_src octave +n
+  %% Setup Excitation
+  excs = struct('i', 2, ...
+      'rcofs', @(w,xi) (1/2/(2j*Klib.K(w,xi)*Ey*Ar))*[-1;1]);
+  %'i' specifies the point of excitation. 
+  %'rcofs' specifies the coefficients in the RHS of the eqn such that,
+  %   [I -I]*[a;b] = rcofs        represents the excitation.
+  %   where "a" and "b" are the vector of wave coefficients just before and
+  %   after the point of excitation.
+#+end_src
+The meaning of the different terms are as explained in the comments above.
+#+end_Details
+#+begin_Details "Conduct Preprocessing" :background-color white :title-color black
+#+begin_src octave +n
+  %% Preprocess Everything
+  [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib);
+  Nwc = size(wcomps,1);  % Number of wave components
+#+end_src
+#+end_Details
+#+begin_Details "Linear forced response analysis" :background-color "#c9c9c9" :title-color black
+We now conduct the forced response analysis for a list of frequency values. The key routine here is [[https://github.com/Nidish96/wavevib/tree/master/ROUTINES/WBM/WVAMAT.m][WVAMAT]], which computes the linear Jacobian and the Linear forcing vector. These can be linsolved to obtain the forced response, as is done here.
+#+begin_src octave +n
+  %% Conduct Linear Forced Response Analysis
+  Nw = 1000;
+  Ws = linspace(0, 1e5, Nw);
+  Npts = pcs(end).irange(end);  % Total number of points. 
+				% Note: This is NOT the same as before. 
+				% Preprocessing usually adds more/reorders points.
+  ACs = zeros(Npts*Nwc,Nw);
+
+  Famp = 150e5;  % 15MN Excitation amplitude
+  for iw=1:Nw
+      % The following function calculates the "A" matrix and the "Force"
+      % vector (both complex). An argument 'r' can be passed as the last
+      % argument to obtain everything in real form (real and imaginary parts 
+      % stored separately). "Fv" is the force vector assuming unit
+      % excitation.
+      [Amat, ~, ~, Fv] = WVAMAT([Ws(iw);0], 1, pcs, bcs, joints, Klib);
+      ACs(:,iw) = Amat\(Fv*Famp);
+  end
+#+end_src
+The results are then plotted for the point right after the joint using the following code.
+#+begin_src octave +n
+  %% Plot Forced Response
+  opi = 9:10;  % Output wave coefficients
+  figure(1)
+  clf()
+  subplot(2,1,1)
+  semilogy(Ws/1e3, abs(2*sum(ACs(opi,:))));
+  grid on
+  ylabel('Response (m)')
+  subplot(2,1,2)
+  plot(Ws/1e3, rad2deg(angle(2*sum(ACs(opi,:)))));
+  grid on
+  set(gca, 'YTick', -180:90:180)
+  ylabel('Phase (degs)')
+  xlabel('Frequency (k rad/s)')
+#+end_src
+#+end_Details
+*** Results
+Fig. [[fig:b_out]] presents the linear forced response for this system (results have been validated against the analytical results). 
+#+NAME: fig:b_out
+#+CAPTION: Linear forced response of the linear-jointed bar.
+#+ATTR_HTML: :width 600px
+[[./FIGS/b_out.png]]
+*** TODO Include a nicely labeled diagram in the description.
+*** TODO Describe how to use [[https://github.com/Nidish96/wavevib/tree/master/ROUTINES/WBM/WVEVALWCOFS.m][WVEVALWCOFS]] for evaluating wave coefficients and plot deflection shape.
+** Nonlinear-Jointed Bars
+<<sec:c_nljointedbars>>
+This is the first nonlinear jointed example. This is the exact same example considered in [cite:@balajiWavebasedAnalysisJointed2022]. 
+*** Code Overview
+#+begin_Details "Setup the model" :background-color "#c9c9c9" :title-color black
+The initial setup is identical to that for sec. [[sec:b_linjointedbars]] since the model is the same. 
+#+begin_src octave -n
+  addpath('../ROUTINES/SOLVERS/')
+  addpath('../ROUTINES/WBM/')
+
+  %DESCRIPTION: This shows the non-linear forced response computation for 
+  %the 1D bar example considered in Balaji, Brake, Leamy (2022a,2022b)
+
+  %% Setup model
+  Ey = 2.62e11;
+  rho = 1280;
+  ell = 1.0;
+  Ar = 31.75e-3*54e-3;
+  Klib = struct('K', @(w,xi) w/sqrt(Ey/rho));
+  wcomps = [1j 1;  % First component -> exp( j k x )
+	   -1j 1]; % Sec component   -> exp(-j k x )
+
+  % Setup "wave-based pieces"
+  pcs = [struct('coords', [0;0.28;ell/3], 'wcomps', wcomps);
+      struct('coords', [ell/3;ell], 'wcomps', wcomps)];
+
+  % Setup Boundary Conditions (pts indexed as given above in sequence)
+  bcs = [struct('i', 1, 'cofs', @(w,xi) [1 1]);
+      struct('i', 5, 'cofs', @(w,xi) [1 1])];
+
+  % Setup Excitation
+  excs = struct('i', 2, ...
+      'rcofs', @(w,xi) (1/2/(2j*Klib.K(w,xi)*Ey*Ar))*[-1;1]);
+#+end_src
+#+end_Details
+#+begin_Details "Setup the nonlinear joint" :background-color white :title-color black
+Some more care is necessary for setting up the joint since this has nonlinear behavior modeled as a cubic spring in parallel with linear stiffness and damping terms. First setup the AFT properties:
+#+begin_src octave +n
+  %% Setup AFT properties
+  h = sort([1; 3]);  % List of harmonics to consider for simulation. 
+  Nt = 128;  % Number of points for Alternating Frequency-Time calculations.
+#+end_src
+Now setup the relevant coefficients and nonlinearity function for the joint.
+#+begin_src octave +n
+  %% Setup the Nonlinear Joint
+  kJ = 1e9;
+  cJ = 320;
+  gJ = 1e8;
+  cofs = @(w,xi) [1j*Klib.K(w,xi)*[1 -1 0 0];1 -1 -1 1];
+  joints = struct('type', 2, 'i', 3, 'j', 4, 'cofs', cofs, ...
+      'nl', @(Uw) HDUFF(Uw, kJ, cJ, gJ, h, Nt), ...
+      'nldcofs', @(w,xi) [1 1 -1 -1], ... % The relative displacement.
+      'nlfcofs', @(w,xi) 1/(Ey*Ar)*[1; 0]);
+  %NOTE: The 'nldcofs' specifies the coefficient matrix such that the
+  % displacement(s) used as input for the nonlinearity is given as,
+  %   u = NLDCOFS * [a;b]         where "a" and "b" are the wave coefficients
+  %   of points 'i' and 'j' respectively.
+  %
+  %      The 'nlfcofs' specifies the coefficient matrix that the results from
+  % the nonlinear force function are multiplied with before being added to
+  % the equations of motion. The nonlinear forces are added in the LHS of the
+  % equations. 
+#+end_src
+The meaning of the different terms are provided as comments in the code itself.
+
+#+begin_details "The [[https://github.com/Nidish96/wavevib/tree/master/EXAMPLES/HDUFF.m][HDUFF]] function" :background-color "#c9c9c9" :title-color black
+Here is the [[https://github.com/Nidish96/wavevib/tree/master/EXAMPLES/HDUFF.m][HDUFF]] function that takes as input the relative displacment harmonics and returns the force harmonics. 
+#+begin_src octave
+  function [FNL, dFNLdU, dFNLdw] = HDUFF(Uw, kJs, cJs, gJs, h, Nt)
+  %HDUFF returns the Fourier Coefficients of the cubic spring along with
+  %linear connections for given displacement coefficients. Force that is
+  %returned is:
+  %           kJs * us + cJs * uds + gJs * us.^3
+  %	When us is a vector of multiple DOFs, the coefficients are
+  % appropriately sized matrices.
+  %
+  %   USAGE: 
+  %       [FNL, dFNLdU, dFNLdw] = HDUFF(Uw, kJ, cJ, gJ, h, Nt);
+  %   INPUTS:
+  %       Uw      : (Nd*Nhc+1,1) [Harmonics of DOFs; frequency]
+  %       kJ,cJ,gJ: (Nd,Nd) Stiffness, damping and cubic stiffness matrices
+  %       h       : (Nh,1) List of harmonics to balance
+  %       Nt      : (int) AFT samples
+  %   OUTPUTS:
+  %       FNL     : (Nd*Nhc,1) Nonlinear force harmonics
+  %       dFNLdU  : (Nd*Nhc,Nd*Nhc) Nonlinear force harmonic jacobian
+  %       dFNLdw  : (Nd*Nhc,1) Jacobian wrt frequency
+    
+      Nhc = sum((h==0)+2*(h~=0));
+      D1 = kron(diag(h),[0 1;-1 0])*Uw(end);  % Fourier Differentiation mx
+      if h(1)==0
+	  D1 = D1(2:end,2:end);
+      end
+      Nd = length(Uw(1:end-1))/Nhc;
+      if rem(Nd,1)~=0
+	  error('Nd not an integer. Value is %f .', Nd);
+      end
+      if all(size(kJs)~=Nd)
+	  kJs = kJs(1)*eye(Nd);
+      end
+      if all(size(cJs)~=Nd)
+	  cJs = cJs(1)*eye(Nd);
+      end
+      if all(size(gJs)~=Nd)
+	  gJs = gJs(1)*eye(Nd);
+      end
+
+      cst = AFT(eye(Nhc), h, Nt, 'f2t');
+      sct = AFT(D1, h, Nt, 'f2t');
+
+      ut = AFT(reshape(Uw(1:end-1), Nd, Nhc)', h, Nt, 'f2t');
+      udt = AFT(D1*reshape(Uw(1:end-1), Nd, Nhc)', h, Nt, 'f2t');
+    
+      ft = ut*kJs' + udt*cJs' + ut.^3*gJs';
+      dfdu = kron(ones(Nt,1), kJs');
+      for di=1:Nd
+	  dfdu(di:Nd:end,:) = dfdu(di:Nd:end,:)+3*ut(:,di).^2.*gJs(:,di)';
+      end
+      dfdud = kron(ones(Nt,1), cJs');
+    
+      FNL = reshape(AFT(ft, h, Nt, 't2f')', Nd*Nhc,1);
+      dFNLdU = zeros(Nhc*Nd);
+      dFNLdw = zeros(Nhc*Nd,1);
+      for di=1:Nd
+	  for dj=1:Nd
+	      dFNLdU(di:Nd:end, dj:Nd:end) = ...
+		  AFT(dfdu(dj:Nd:end, di).*cst + dfdud(dj:Nd:end, di).*sct, h, Nt, 't2f');
+	  end
+	  dFNLdw(di:Nd:end) = AFT(sum(reshape(dfdud(:, di), Nd, Nt)'.*udt/Uw(end),2), h, Nt, 't2f');
+      end
+
+  %     % Simple (SDOF) Version
+  %     ut = AFT(Uw(1:end-1), Nt, h, 'f2t');
+  %     udt = AFT(D1*Uw(1:end-1), Nt, h, 'f2t');
+  % 
+  %     ft = kJs*ut + cJs*udt + gJs*ut.^3;
+  %     dfdu = kJs + 3*gJs*ut.^2;
+  %     dfdud = cJs*ones(Nt,1);
+  % 
+  %     FNL = AFT(ft, Nt, h, 't2f');
+  %     dFNLdU = AFT(dfdu.*cst + dfdud.*sct, Nt, h, 't2f');
+  %     dFNLdw = AFT(dfdud.*udt/Uw(end), Nt, h, 't2f');
+  end
+#+end_src
+#+end_details
+#+end_Details
+
+#+begin_Details "Conduct Preprocessing" :background-color "#c9c9c9" :title-color black
+Preprocess everything (same as before).
+#+begin_src octave +n
+  %% Preprocess Everything
+  [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib);
+  Nwc = size(wcomps,1);  % Number of wave components
+#+end_src
+#+end_Details
+#+begin_Details "Setup the Continuation Parameters for the Nonlinear Forced Response Analysis" :background-color white :title-color black
+#+begin_src octave +n
+  Npts = pcs(end).irange(end);  % Number of points in model
+  Nh = length(h); % Number of harmonics
+  Nhc = sum((h==0)+2*(h~=0));  % Number of harmonic coefficients
+  % Compute indices to convert between real-imaginary and complex
+  % representations:
+  [zinds,hinds,rinds0,rinds,iinds] = HINDS(Npts*Nwc, h);
+
+  % Setup continuation limits
+  Wst = 78e3;
+  Wen = 82e3;
+  dw  = 0.025;  % Continuation step size
+
+  % Continuation properties for CONTINUE.m
+  Copt = struct('Nmax', 100, 'angopt', 2e-1, 'DynDscale', 1);
+
+  Famps = 150e5*[0.5 1 2];  % List of force values to conduct analysis for
+  acC = cell(size(Famps));  % Cell to store results
+#+end_src
+#+end_Details
+#+begin_Details "Do the forced response analysis" :background-color "#c9c9c9" :title-color black
+Loop over the desired force amplitudes and do the continuation analysis.
+#+begin_src octave +n
+  for fi=1:length(Famps)
+      % Continuation is done in real-imaginary representation
+      ari0 = zeros(Npts*Nwc*Nhc, 1);
+      ariwC = CONTINUE(@(ariw) WVHBRESFUN(ariw, Famps(fi), h, pcs, bcs, joints, Klib), ...
+	  ari0, Wst, Wen, dw, Copt);
+    
+      % Convert to complex representation
+      acC{fi} = zeros(Npts*Nwc*Nh+1, size(ariwC,2));
+      acC{fi}([zinds hinds end], :) = [ariwC(rinds0,:); ariwC(rinds,:)+1j*ariwC(iinds,:);ariwC(end,:)];
+  end
+#+end_src
+#+end_Details
+#+begin_Details "Plot the forced response" :background-color white :title-color black
+Now plot the forced response (similar to sec. [[sec:b_linjointedbars]]) at the point right after the joint.
+#+begin_src octave +n
+  opi =  9:10;
+  figure(2)
+  clf()
+  for fi=1:length(Famps)
+      subplot(2,1,1)
+      aa(fi)=plot(acC{fi}(end,:)/1e3, abs(2*sum(acC{fi}(opi,:))), 'LineWidth', 2); hold on
+      legend(aa(fi), sprintf('F = %.1f MN', Famps(fi)*1e-6))
+      ylabel('Response (m)')
+      subplot(2,1,2)
+      plot(acC{fi}(end,:)/1e3, rad2deg(angle(2*sum(acC{fi}(opi,:)))), 'LineWidth', 2); hold on
+      ylabel('Phase (degs)')
+  end
+  for i=1:2
+      subplot(2,1,i)
+      xlim([79 82]); grid on
+  end
+  set(gca, 'YTick', -180:90:180)
+  xlabel('Frequency (k rad/s)')
+  subplot(2,1,1)
+  legend(aa, 'Location', 'northwest')
+#+end_src
+#+end_Details
+*** Results
+Fig. [[fig:c_out]] presents the forced response for this example. It shows the classical coexisting solutions behavior for cubically stiff systems as well as an amplitude-dependent nonlinear behavior.
+#+NAME: fig:c_out
+#+CAPTION: Nonlinear forced response of the jointed bar.
+#+ATTR_HTML: :width 600px
+[[./FIGS/c_out.png]]
+*** TODO Include a nice schematic diagram
+*** TODO Describe how to use [[https://github.com/Nidish96/wavevib/tree/master/ROUTINES/WBM/WVEVALWCOFS.m][WVEVALWCOFS]] for evaluating wave coefficients and plot deflection shape.
+** Nonlinear-Jointed Euler-Bernoulli Beams
+<<sec:d_nljointedEBbeams>>
+This is a nonlinear jointed Euler-Bernoulli beams example. The reason for including this is to show how to handle evanescent wave components (non-traveling wave components).
+*** Code Overview
+#+begin_Details "Setup the model" :background-color "#c9c9c9" :title-color black
+The model setup is very similar to the example in sec. [[sec:c_nljointedbars]], but adapted for the Euler-Bernoulli Beam context.
+#+begin_src octave -n
+  addpath('../ROUTINES/SOLVERS/')
+  addpath('../ROUTINES/WBM/')
+
+  %DESCRIPTION: This is a nonlinear jointed Euler-Bernoulli Beam example
+  %similar to the jointed bar example.
+
+  %% Setup Model
+  Ey = 190e9;
+  rho = 7680;
+  wid = 0.2;  % Width
+  brd = 0.4;  % Breadth
+  Ar = wid*brd;  % Area
+  Iy = wid^3*brd/12;  % 2nd moment of area
+  L0 = 2.0;  % Total Length
+  Klib = struct('K', @(w,xi) sqrt(w)*(rho*Ar/Ey/Iy)^(0.25));
+  wcomps = [1 1;  % First component -> exp(  k x )
+					  -1 1;  % Second component-> exp( -k x )
+					  1j 1;  % Third component -> exp( ik x )
+					  -1j 1]; % Fourth component-> exp(-ik x )
+
+  % Setup "wave-based pieces"
+  pcs = [struct('coords', [0;L0/3;L0], 'wcomps', wcomps);
+	 struct('coords', [L0;2*L0], 'wcomps', wcomps)];
+
+  % Setup Boundary Conditions. Fix-Fix used here.
+  bcs = [struct('i', 1, 'cofs', @(w,xi) [1 1 1 1; 1 -1 1j -1j]);
+			   struct('i', 5, 'cofs', @(w,xi) [1 1 1 1; 1 -1 1j -1j])];
+
+  %% Setup Excitation
+  Mx = @(w,xi) inv([Ey*Iy*Klib.K(w,xi)^3*[-1 1 1j -1j];
+									  Ey*Iy*Klib.K(w,xi)^2*[-1 -1 1 1];
+									  [1 1 1 1];
+									  Klib.K(w,xi)*[1 -1 1j -1j]]);
+
+  excs = struct('i', 2, 'nh', 1, ...
+							  'rcofs', @(w,xi) Mx(w,xi)*[1/2;0;0;0]);
+  %'nh' sets the harmonic at which to apply the excitation
+#+end_src
+Make note of how differently the =wcomps= matrix is setup here to accommodate for four different wave components at each point in the model. Also observe the boundary conditions (through =bcs=) and the excitation setup.
+#+end_Details
+#+begin_Details "Setup the nonlinear joint after setting the AFT properties" :background-color white :title-color black
+The joint setup is quite similar to before but with the key difference that this now requires the beam theory equations. The joint is also taken to connect the beams through both shear as well as moment reactions (with identical coefficients), except for the nonlinearity (which is only acting on the shear). 
+#+begin_src octave +n
+  %% Setup Joint
+  h = [1; 3];
+  Nt = 128;
+
+  kJs = diag([1e9 1e9]);
+  cJs = diag([320 320]);
+  gJs = diag([1e8 0]);
+  cofs = @(w,xi) [-Klib.K(w,xi)*[1 -1 -1j 1j 0 0 0 0];
+      -[1 1 -1 -1 0 0 0 0];
+      -Klib.K(w,xi)*[1 -1 -1j 1j -1 1 1j -1j];
+      -[1 1 -1 -1 -1 -1 1 1]];
+  joints = struct('type', 2, 'i', 3, 'j', 4, 'cofs', cofs, ...
+      'nl', @(Uw) HDUFF(Uw, kJs, cJs, gJs, h, Nt), ...
+      'nldcofs', @(w,xi) [1 1 1 1 -1 -1 -1 -1; Klib.K(w,xi)*[1 -1 1j -1j -1 1 -1j 1j]], ...
+      'nlfcofs', @(w,xi) [eye(2);zeros(2)]/(Ey*Iy*Klib.K(w,xi)^2));
+  %NOTE: This is a joint that engages both the transverse displacement as
+  %well as rotation such that,
+  %       fnl = kJs [u;th] + cJs [udot;thdot] + gJs [u^3;th^3];
+  %   represents the nonlinear force. "th" in the above is the rotation.
+#+end_src
+The nonlinearity is realized by the same [[https://github.com/Nidish96/wavevib/tree/master/EXAMPLES/HDUFF.m][HDUFF]] routine as used in sec. [[sec:c_nljointedbars]].
+#+end_Details
+#+begin_Details "Preprocess the model" :background-color "#c9c9c9" :title-color black
+Same as before.
+#+begin_src octave +n
+  %% Pre-Processing
+  [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib);
+#+end_src
+#+end_Details
+#+begin_Details "Setup continuation properties for the forced response analysis" :background-color white :title-color black
+#+begin_src octave +n
+  Npts = pcs(end).irange(end);  % Number of points in model
+  Nwc = size(wcomps,1);  % Number of wave coefficients per point
+
+  Nh = length(h);  % Number of harmonics
+  Nhc = sum((h==0)+2*(h~=0));  % Number of harmonic coefficients
+  % Indices for easy conversion between complex and real representations
+  [zinds,hinds,rinds0,rinds,iinds] = HINDS(Npts*Nwc, h);
+
+  % Frequency limits for continuation
+  Wst = 1055.5;
+  Wen = 1055.9;
+  dw = 0.1;  % Continuation step size
+
+  % Continuation properties
+  Copt = struct('Nmax', 300, 'angopt', 1e-1, 'DynDscale', 1);
+
+  Famps = 2e3*[1 10 20];  % Forcing levels for analysis
+  acC = cell(size(Famps));  % Cells to store the responses
+#+end_src
+#+end_Details
+#+begin_Details "Conduct the continuation analysis" :background-color "#c9c9c9" :title-color black
+Continuation is initiated and conducted in a pretty similar fashion as before.
+#+begin_src octave +n
+  for fi=1:length(Famps)
+      % Setup Linear Initial Guess
+      [Amat, ~, ~, Fv] = WVAMAT([Wst;0], h, pcs, bcs, joints, Klib, 'r');
+      ari0 = Amat\Fv*Famps(fi); 
+      %NOTE: This does NOT linearize the joint. This merely assumes no joint
+      %is present.
+      Copt.Dscale = [abs(ari0+1e-6);Wst];  % Setup Scaling for continuation (sometimes helps)
+
+      % Conduct continuation
+      ariwC = CONTINUE(@(ariw) WVHBRESFUN(ariw, Famps(fi), h, pcs, bcs, joints, Klib), ...
+	  ari0, Wst, Wen, dw, Copt);
+
+      % Convert to complex representation
+      acC{fi} = zeros(Npts*Nwc*Nh+1, size(ariwC,2));
+      acC{fi}([zinds hinds end], :) = [ariwC(rinds0,:); ariwC(rinds,:)+1j*ariwC(iinds,:);ariwC(end,:)];
+  end
+#+end_src
+#+end_Details
+#+begin_Details "Plot the response" :background-color white :title-color black
+Plot the response at the excitation location.
+#+begin_src octave +n
+  %% Plot Results
+  opi = 5:8;
+  figure(1)
+  clf()
+  aa = gobjects(size(Famps));
+  for fi=1:length(Famps)
+      subplot(2,1,1)
+      aa(fi)=plot(acC{fi}(end,:), abs(sum(2*acC{fi}(opi,:))), '-', 'LineWidth', 2); hold on
+      legend(aa(fi), sprintf('F = %.0f kN', Famps(fi)/1e3));
+      grid on
+      ylabel('Response (m)')
+      subplot(2,1,2)
+      plot(acC{fi}(end,:), rad2deg(angle(sum(2*acC{fi}(opi,:)))), '-', 'LineWidth', 2); hold on
+      grid on
+      ylabel('Phase (degs)')
+  end
+  subplot(2,1,1)
+  xlim([Wst Wen])
+  legend(aa, 'Location', 'northwest')
+  subplot(2,1,2)
+  xlim([Wst Wen])
+  set(gca, 'YTick', -180:90:180)
+  xlabel('Frequency (rad/s)')
+#+end_src
+#+end_Details
+*** Results
+#+NAME: fig:d_out
+#+CAPTION: Forced response of the non-linear-jointed beam.
+#+ATTR_HTML: :width 600px
+[[./FIGS/d_out.png]]
+*** TODO Include a nicely labeled schematic of the considered system
+*** TODO Describe how to use [[https://github.com/Nidish96/wavevib/tree/master/ROUTINES/WBM/WVEVALWCOFS.m][WVEVALWCOFS]] for evaluating wave coefficients and plot deflection shape.
 ** Impacting Cantilever Beams    
 This is an example from [cite:@praveenkrishnaExperimentalNumericalInvestigations2012], where the dynamics of an impacting cantilever beam setup is investigated. The technical interest in this example is motivated from the broader are of vibro-impact dynamics[cite:@emaciNumericalExperimentalStudy1997], wherein the advantages of the wave based approach are expected to be particularly relevant (due to the avoidance of spatial discretization).
 
@@ -47,7 +675,6 @@ A schematic of the setup is shown below in fig. [[fig:iclbeamsetup]] and the mat
 | Young's Modulus (GPa) | Density (kg/m^3) | Section (mm^2) | Lengths (mm) | Excitation Point (mm) | Rayleigh damping (\alpha, \beta) | Contact Gap (mm) | Contact Stiffness (N/m) |
 |-----------------------+------------------+----------------+--------------+-----------------------+----------------------------------+------------------+-------------------------|
 |                   210 |             7680 | 3 \times 40    | 560, 445     | 560/6                 | (0.80, 1.1\times 10^{-4})        |              2.5 |                     110 |
-
 *** Code Overview
 The most important part of the code are from line 16 to line 107. The complete code is explained below in different blocks (click to expand each block).
 #+begin_Details "Declare Properties" :background-color "#c9c9c9" :title-color black
@@ -372,9 +999,3 @@ It is recommended to try running [[https://github.com/Nidish96/wavevib/tree/mast
 #+PRINT_BIBLIOGRAPHY: References
 
 This website was generated using org-mode on emacs with the Bigblow html theme from [[https://github.com/fniessen/org-html-themes][https://github.com/fniessen/org-html-themes]].
-
-
-#+BEGIN_EXPORT html
-<!-- <script type="text/javascript" src="./collcont_clkbls.js"></script> -->
-<script>var HS_STARTUP_FOLDED = true;</script>
-#+END_EXPORT
