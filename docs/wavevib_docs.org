@@ -2,8 +2,9 @@
 #+EXPORT_FILE_NAME: index.html
 #+OPTIONS: startup:indent
 #+BIBLIOGRAPHY: wavevib_docs.bib
-#+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
-#+HTML_HEAD: <style> #content{max-width:1800px;}</style>
+#+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-bigblow.setup
+# #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
+# #+HTML_HEAD: <style> #content{max-width:1800px;}</style>
 
 * Introduction
 [[https://github.com/Nidish96/wavevib][WaveVib]] is intended to be a set of OCTAVE/MATLAB routines that can be used to study wave-based linear and nonlinear structures. The main advantage with using this approach comes from the fact that the linear portions of the problem are represented without any approximation (unlike weighted residual or variational approaches). The interface supports both periodic as well as quasi-periodic steady state response regimes. Immediate use cases include jointed beams, trusses, frame structures, fluid-filled columns, rotordynamics, etc.
@@ -25,15 +26,15 @@ A good starting place for the new user to the Wave-Based Modeling (WBM) framewor
 * COMMENT Programming Interface
 Coming soon...
 * [[https://github.com/Nidish96/wavevib/tree/master/EXAMPLES/][Examples]]
-** COMMENT [[https://github.com/Nidish96/wavevib/tree/master/EXAMPLES/a_singlebar.m][Single Bar]]
+** COMMENT Single Bar
 Coming soon...
-** COMMENT [[https://github.com/Nidish96/wavevib/tree/master/EXAMPLES/b_linjointedbars.m][Linear-Jointed Bars]]
+** COMMENT Linear-Jointed Bars
 Coming soon...
-** COMMENT [[https://github.com/Nidish96/wavevib/tree/master/EXAMPLES/c_nljointedbars.m][Nonlinear-Jointed Bars]]
+** COMMENT Nonlinear-Jointed Bars
 Coming soon...
-** COMMENT [[https://github.com/Nidish96/wavevib/tree/master/EXAMPLES/d_nljointedEBbeams.m][Nonlinear-Jointed Euler-Bernoulli Beams]]
+** COMMENT Nonlinear-Jointed Euler-Bernoulli Beams
 Coming soon...
-** [[https://github.com/Nidish96/wavevib/tree/master/EXAMPLES/e_nlimpactclbeams.m][Impacting Cantilever Beams]]    
+** Impacting Cantilever Beams    
 This is an example from [cite:@praveenkrishnaExperimentalNumericalInvestigations2012], where the dynamics of an impacting cantilever beam setup is investigated. The technical interest in this example is motivated from the broader are of vibro-impact dynamics[cite:@emaciNumericalExperimentalStudy1997], wherein the advantages of the wave based approach are expected to be particularly relevant (due to the avoidance of spatial discretization).
 
 A schematic of the setup is shown below in fig. [[fig:iclbeamsetup]] and the material properties used for this example are presented in tab. [[tab:matprops]].
