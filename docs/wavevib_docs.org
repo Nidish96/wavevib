@@ -35,7 +35,26 @@ The purpose of this section is to provide a description of the programming inter
 #+NAME: fig:swplan
 #+ATTR_HTML: :width 800px
 [[./FIGS/rep1_SWPlan.png]]
-* [[https://github.com/Nidish96/wavevib/tree/master/EXAMPLES/][Examples]]
+
+WaveVib is meant to serve as a toolbox that provides a few generic core routines that help define geometries, materials, joints, excitation, as well as other point-features. These routines are therefore written agnostic of the exact types of problems being dealt with. The following subsections are ordered in such a manner so as to aid usage by being read in order.
+** Specification of a Library of Dispersion Relationships
+** Specification of the Pieces of a Model
+** Specification of Boundary Conditions
+** Specification of Joints
+*** Fused Joints
+*** Linear Joints
+*** Nonlinear Joints
+** Computation of Linear Analysis Quantities
+*** Linear Jacobian and Force vector
+*** Linear Modal Analysis
+** Nonlinear Periodic Response Analysis
+** Continuation of Nonlinear Periodic Responses
+*** Stability of Nonlinear Solutions
+** Post-Processing
+** Advanced Interfaces
+*** Minimalized Representation
+*** Quasi-Periodic Response Analysis
+* Examples
 ** Single Bar
 <<sec:a_singbar>>
 This is by far the simplest example and can be used as a starting point to understand the usage of the tool. It conducts the analysis of a fixed-fixed 1D bar with the material properties in tab. [[tab:sbarmprops]].
@@ -285,13 +304,13 @@ Fig. [[fig:b_out]] presents the linear forced response for this system (results 
 #+ATTR_HTML: :width 600px
 [[./FIGS/b_out.png]]
 *** TODO Include a nicely labeled diagram in the description.
-*** TODO Describe how to use [[https://github.com/Nidish96/wavevib/tree/master/ROUTINES/WBM/WVEVALWCOFS.m][WVEVALWCOFS]] for evaluating wave coefficients and plot deflection shape.
+*** TODO Describe how to use WVEVALWCOFS for evaluating wave coefficients and plot deflection shape.
 ** Nonlinear-Jointed Bars
 <<sec:c_nljointedbars>>
 This is the first nonlinear jointed example. This is the exact same example considered in [cite:@balajiWavebasedAnalysisJointed2022]. 
 *** Code Overview
 #+begin_Details "Setup the model" :background-color "#c9c9c9" :title-color black
-The initial setup is identical to that for sec. [[sec:b_linjointedbars]] since the model is the same. 
+The initial setup is identical to that for sec. [[sec:b_linjointedbars]] since the model is the same.
 #+begin_src octave -n
   addpath('../ROUTINES/SOLVERS/')
   addpath('../ROUTINES/WBM/')
@@ -509,7 +528,7 @@ Fig. [[fig:c_out]] presents the forced response for this example. It shows the c
 #+ATTR_HTML: :width 600px
 [[./FIGS/c_out.png]]
 *** TODO Include a nice schematic diagram
-*** TODO Describe how to use [[https://github.com/Nidish96/wavevib/tree/master/ROUTINES/WBM/WVEVALWCOFS.m][WVEVALWCOFS]] for evaluating wave coefficients and plot deflection shape.
+*** TODO Describe how to use WVEVALWCOFS for evaluating wave coefficients and plot deflection shape.
 ** Nonlinear-Jointed Euler-Bernoulli Beams
 <<sec:d_nljointedEBbeams>>
 This is a nonlinear jointed Euler-Bernoulli beams example. The reason for including this is to show how to handle evanescent wave components (non-traveling wave components).
@@ -666,7 +685,7 @@ Plot the response at the excitation location.
 #+ATTR_HTML: :width 600px
 [[./FIGS/d_out.png]]
 *** TODO Include a nicely labeled schematic of the considered system
-*** TODO Describe how to use [[https://github.com/Nidish96/wavevib/tree/master/ROUTINES/WBM/WVEVALWCOFS.m][WVEVALWCOFS]] for evaluating wave coefficients and plot deflection shape.
+*** TODO Describe how to use WVEVALWCOFS for evaluating wave coefficients and plot deflection shape.
 ** Impacting Cantilever Beams
 This is an example from [cite:@praveenkrishnaExperimentalNumericalInvestigations2012], where the dynamics of an impacting cantilever beam setup is investigated. The technical interest in this example is motivated from the broader are of vibro-impact dynamics[cite:@emaciNumericalExperimentalStudy1997], wherein the advantages of the wave based approach are expected to be particularly relevant (due to the avoidance of spatial discretization).
 
@@ -986,7 +1005,7 @@ It is recommended to try running [[https://github.com/Nidish96/wavevib/tree/mast
     
     *Note*: All the code in [[https://github.com/Nidish96/wavevib/tree/master/EXAMPLES/e_nlimpactclbeams.m][the matlab script]] from line 107 onwards are merely postprocessing, and the user may choose to do this their own way also.
 * Development Avenues
-** TODO Desirable Features [2/6]
+** TODO Desirable Features
 1. [ ] 3D frame joint constitutions
 2. [ ] EPMC Implementation
 3. [X] Joints connecting multiple pieces

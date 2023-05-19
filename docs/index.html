@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2023-05-19 Fri 15:53 -->
+<!-- 2023-05-19 Fri 16:53 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>WaveVib - An OCTAVE/MATLAB Toolbox for Wave-Based Modeling of Nonlinear Jointed Structures</title>
@@ -128,60 +128,92 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#orgbe0b918">1. Introduction</a>
+<li><a href="#orgcb25849">1. Introduction</a>
 <ul>
-<li><a href="#org9e37c99">1.1. The different folders in the repository</a></li>
+<li><a href="#org11b8654">1.1. The different folders in the repository</a></li>
 </ul>
 </li>
-<li><a href="#orga663dd6">2. Programming Interface</a></li>
-<li><a href="#orgfecdfb4">3. Examples</a>
+<li><a href="#org616f4dc">2. Programming Interface</a>
 <ul>
-<li><a href="#org4c46a4b">3.1. Single Bar</a>
+<li><a href="#org9c5d78e">2.1. Specification of a Library of Dispersion Relationships</a></li>
+<li><a href="#org6d50b55">2.2. Specification of the Pieces of a Model</a></li>
+<li><a href="#org3272733">2.3. Specification of Boundary Conditions</a></li>
+<li><a href="#org64828a7">2.4. Specification of Joints</a>
 <ul>
-<li><a href="#org8b8cb48">3.1.1. Code Overview</a></li>
-<li><a href="#org3d891fb">3.1.2. Results</a></li>
-<li><a href="#org8decb1b">3.1.3. <span class="todo TODO">TODO</span> Show mode-shapes in results</a></li>
+<li><a href="#org0ffa1da">2.4.1. Fused Joints</a></li>
+<li><a href="#orgdefd0d4">2.4.2. Linear Joints</a></li>
+<li><a href="#org5dce260">2.4.3. Nonlinear Joints</a></li>
 </ul>
 </li>
-<li><a href="#org892a6df">3.2. Linear-Jointed Bars</a>
+<li><a href="#orgb52577b">2.5. Computation of Linear Analysis Quantities</a>
 <ul>
-<li><a href="#orgb0ffc4d">3.2.1. Code Overview</a></li>
-<li><a href="#orge164dfc">3.2.2. Results</a></li>
-<li><a href="#orgea5abcd">3.2.3. <span class="todo TODO">TODO</span> Include a nicely labeled diagram in the description.</a></li>
-<li><a href="#orgd448792">3.2.4. <span class="todo TODO">TODO</span> Describe how to use WVEVALWCOFS for evaluating wave coefficients and plot deflection shape.</a></li>
+<li><a href="#orge819f2d">2.5.1. Linear Jacobian and Force vector</a></li>
+<li><a href="#org29999c4">2.5.2. Linear Modal Analysis</a></li>
 </ul>
 </li>
-<li><a href="#orga059005">3.3. Nonlinear-Jointed Bars</a>
+<li><a href="#org31c3cdb">2.6. Nonlinear Periodic Response Analysis</a></li>
+<li><a href="#orgdf72ba3">2.7. Continuation of Nonlinear Periodic Responses</a>
 <ul>
-<li><a href="#orgffeb734">3.3.1. Code Overview</a></li>
-<li><a href="#org259f429">3.3.2. Results</a></li>
-<li><a href="#org56cc2a8">3.3.3. <span class="todo TODO">TODO</span> Include a nice schematic diagram</a></li>
-<li><a href="#org22672aa">3.3.4. <span class="todo TODO">TODO</span> Describe how to use WVEVALWCOFS for evaluating wave coefficients and plot deflection shape.</a></li>
+<li><a href="#org6f6951d">2.7.1. Stability of Nonlinear Solutions</a></li>
 </ul>
 </li>
-<li><a href="#orge8767c3">3.4. Nonlinear-Jointed Euler-Bernoulli Beams</a>
+<li><a href="#org37ee62a">2.8. Post-Processing</a></li>
+<li><a href="#org3355e50">2.9. Advanced Interfaces</a>
 <ul>
-<li><a href="#org70cc16f">3.4.1. Code Overview</a></li>
-<li><a href="#org640af4d">3.4.2. Results</a></li>
-<li><a href="#org71fede1">3.4.3. <span class="todo TODO">TODO</span> Include a nicely labeled schematic of the considered system</a></li>
-<li><a href="#orgda8cba0">3.4.4. <span class="todo TODO">TODO</span> Describe how to use WVEVALWCOFS for evaluating wave coefficients and plot deflection shape.</a></li>
-</ul>
-</li>
-<li><a href="#orgd576ef1">3.5. Impacting Cantilever Beams</a>
-<ul>
-<li><a href="#orgdb6a6bf">3.5.1. Code Overview</a></li>
-<li><a href="#org0a48baa">3.5.2. Results</a></li>
+<li><a href="#orgd1c6d76">2.9.1. Minimalized Representation</a></li>
+<li><a href="#org5182746">2.9.2. Quasi-Periodic Response Analysis</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#orgca1d649">4. Development Avenues</a>
+<li><a href="#orgb18c917">3. Examples</a>
 <ul>
-<li><a href="#orgb175d73">4.1. <span class="todo TODO">TODO</span> Desirable Features <code>[2/6]</code></a></li>
-<li><a href="#org518c268">4.2. <span class="todo TODO">TODO</span> Bugfixes</a></li>
+<li><a href="#org0e03c19">3.1. Single Bar</a>
+<ul>
+<li><a href="#org46fee92">3.1.1. Code Overview</a></li>
+<li><a href="#orgf8147f1">3.1.2. Results</a></li>
+<li><a href="#orgde583e2">3.1.3. <span class="todo TODO">TODO</span> Show mode-shapes in results</a></li>
 </ul>
 </li>
-<li><a href="#orgc03543d">5. References</a></li>
+<li><a href="#org70a7bcb">3.2. Linear-Jointed Bars</a>
+<ul>
+<li><a href="#org18e6486">3.2.1. Code Overview</a></li>
+<li><a href="#org1eaa3f3">3.2.2. Results</a></li>
+<li><a href="#org5f997ed">3.2.3. <span class="todo TODO">TODO</span> Include a nicely labeled diagram in the description.</a></li>
+<li><a href="#orgf37d124">3.2.4. <span class="todo TODO">TODO</span> Describe how to use WVEVALWCOFS for evaluating wave coefficients and plot deflection shape.</a></li>
+</ul>
+</li>
+<li><a href="#orgaf2a15c">3.3. Nonlinear-Jointed Bars</a>
+<ul>
+<li><a href="#orgfa10803">3.3.1. Code Overview</a></li>
+<li><a href="#org744fd9d">3.3.2. Results</a></li>
+<li><a href="#org5ff69cd">3.3.3. <span class="todo TODO">TODO</span> Include a nice schematic diagram</a></li>
+<li><a href="#org994657e">3.3.4. <span class="todo TODO">TODO</span> Describe how to use WVEVALWCOFS for evaluating wave coefficients and plot deflection shape.</a></li>
+</ul>
+</li>
+<li><a href="#orge32b5fe">3.4. Nonlinear-Jointed Euler-Bernoulli Beams</a>
+<ul>
+<li><a href="#org41cf0b4">3.4.1. Code Overview</a></li>
+<li><a href="#org3867417">3.4.2. Results</a></li>
+<li><a href="#org1c678a6">3.4.3. <span class="todo TODO">TODO</span> Include a nicely labeled schematic of the considered system</a></li>
+<li><a href="#org843ef7b">3.4.4. <span class="todo TODO">TODO</span> Describe how to use WVEVALWCOFS for evaluating wave coefficients and plot deflection shape.</a></li>
+</ul>
+</li>
+<li><a href="#org1fa9fce">3.5. Impacting Cantilever Beams</a>
+<ul>
+<li><a href="#orge63293e">3.5.1. Code Overview</a></li>
+<li><a href="#org96fc5dc">3.5.2. Results</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#org4047051">4. Development Avenues</a>
+<ul>
+<li><a href="#org1cb89bc">4.1. <span class="todo TODO">TODO</span> Desirable Features</a></li>
+<li><a href="#org41d19b3">4.2. <span class="todo TODO">TODO</span> Bugfixes</a></li>
+</ul>
+</li>
+<li><a href="#orgc5803c6">5. References</a></li>
 </ul>
 </div>
 </div>
@@ -190,8 +222,8 @@
 <!-- <script type="text/javascript" src="./collcont_clkbls.js"></script> -->
 <script>var HS_STARTUP_FOLDED = true;</script>
 
-<div id="outline-container-orgbe0b918" class="outline-2">
-<h2 id="orgbe0b918"><span class="section-number-2">1.</span> Introduction</h2>
+<div id="outline-container-orgcb25849" class="outline-2">
+<h2 id="orgcb25849"><span class="section-number-2">1.</span> Introduction</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 <a href="https://github.com/Nidish96/wavevib">WaveVib</a> is intended to be a set of OCTAVE/MATLAB routines that can be used to study wave-based linear and nonlinear structures. The main advantage with using this approach comes from the fact that the linear portions of the problem are represented without any approximation (unlike weighted residual or variational approaches). The interface supports both periodic as well as quasi-periodic steady state response regimes. Immediate use cases include jointed beams, trusses, frame structures, fluid-filled columns, rotordynamics, etc.
@@ -201,8 +233,8 @@
 A good starting place for the new user to the Wave-Based Modeling (WBM) framework &amp;/or this package are the papers <a href="#citeproc_bib_item_1">[1]</a>, <a href="#citeproc_bib_item_2">[2]</a>, upon which most of the rudiments of this package are based. The code is hosted on github here: <a href="https://github.com/Nidish96/wavevib">https://github.com/Nidish96/wavevib</a>
 </p>
 </div>
-<div id="outline-container-org9e37c99" class="outline-3">
-<h3 id="org9e37c99"><span class="section-number-3">1.1.</span> The different folders in the repository</h3>
+<div id="outline-container-org11b8654" class="outline-3">
+<h3 id="org11b8654"><span class="section-number-3">1.1.</span> The different folders in the repository</h3>
 <div class="outline-text-3" id="text-1-1">
 <ol class="org-ol">
 <li><a href="https://github.com/Nidish96/wavevib/tree/master/ROUTINES/">ROUTINES</a>
@@ -221,32 +253,95 @@ Contains development scripts used for development of the periodic response routi
 </div>
 </div>
 </div>
-<div id="outline-container-orga663dd6" class="outline-2">
-<h2 id="orga663dd6"><span class="section-number-2">2.</span> Programming Interface</h2>
+<div id="outline-container-org616f4dc" class="outline-2">
+<h2 id="org616f4dc"><span class="section-number-2">2.</span> Programming Interface</h2>
 <div class="outline-text-2" id="text-2">
 <p>
-The purpose of this section is to provide a description of the programming interface incorporated in the design of WaveVib. Fig. <a href="#orgfd82979">1</a> presents an overview of the software plan graphically.
+The purpose of this section is to provide a description of the programming interface incorporated in the design of WaveVib. Fig. <a href="#org1c1071d">1</a> presents an overview of the software plan graphically.
 </p>
 
-<div id="orgfd82979" class="figure">
+<div id="org1c1071d" class="figure">
 <p><img src="./FIGS/rep1_SWPlan.png" alt="rep1_SWPlan.png" width="800px" />
 </p>
 <p><span class="figure-number">Figure 1: </span>The WaveVib Software Plan</p>
 </div>
+
+<p>
+WaveVib is meant to serve as a toolbox that provides a few generic core routines that help define geometries, materials, joints, excitation, as well as other point-features. These routines are therefore written agnostic of the exact types of problems being dealt with. The following subsections are ordered in such a manner so as to aid usage by being read in order.
+</p>
+</div>
+<div id="outline-container-org9c5d78e" class="outline-3">
+<h3 id="org9c5d78e"><span class="section-number-3">2.1.</span> Specification of a Library of Dispersion Relationships</h3>
+</div>
+<div id="outline-container-org6d50b55" class="outline-3">
+<h3 id="org6d50b55"><span class="section-number-3">2.2.</span> Specification of the Pieces of a Model</h3>
+</div>
+<div id="outline-container-org3272733" class="outline-3">
+<h3 id="org3272733"><span class="section-number-3">2.3.</span> Specification of Boundary Conditions</h3>
+</div>
+<div id="outline-container-org64828a7" class="outline-3">
+<h3 id="org64828a7"><span class="section-number-3">2.4.</span> Specification of Joints</h3>
+<div class="outline-text-3" id="text-2-4">
+</div>
+<div id="outline-container-org0ffa1da" class="outline-4">
+<h4 id="org0ffa1da"><span class="section-number-4">2.4.1.</span> Fused Joints</h4>
+</div>
+<div id="outline-container-orgdefd0d4" class="outline-4">
+<h4 id="orgdefd0d4"><span class="section-number-4">2.4.2.</span> Linear Joints</h4>
+</div>
+<div id="outline-container-org5dce260" class="outline-4">
+<h4 id="org5dce260"><span class="section-number-4">2.4.3.</span> Nonlinear Joints</h4>
 </div>
 </div>
-<div id="outline-container-orgfecdfb4" class="outline-2">
-<h2 id="orgfecdfb4"><span class="section-number-2">3.</span> <a href="https://github.com/Nidish96/wavevib/tree/master/EXAMPLES/">Examples</a></h2>
+<div id="outline-container-orgb52577b" class="outline-3">
+<h3 id="orgb52577b"><span class="section-number-3">2.5.</span> Computation of Linear Analysis Quantities</h3>
+<div class="outline-text-3" id="text-2-5">
+</div>
+<div id="outline-container-orge819f2d" class="outline-4">
+<h4 id="orge819f2d"><span class="section-number-4">2.5.1.</span> Linear Jacobian and Force vector</h4>
+</div>
+<div id="outline-container-org29999c4" class="outline-4">
+<h4 id="org29999c4"><span class="section-number-4">2.5.2.</span> Linear Modal Analysis</h4>
+</div>
+</div>
+<div id="outline-container-org31c3cdb" class="outline-3">
+<h3 id="org31c3cdb"><span class="section-number-3">2.6.</span> Nonlinear Periodic Response Analysis</h3>
+</div>
+<div id="outline-container-orgdf72ba3" class="outline-3">
+<h3 id="orgdf72ba3"><span class="section-number-3">2.7.</span> Continuation of Nonlinear Periodic Responses</h3>
+<div class="outline-text-3" id="text-2-7">
+</div>
+<div id="outline-container-org6f6951d" class="outline-4">
+<h4 id="org6f6951d"><span class="section-number-4">2.7.1.</span> Stability of Nonlinear Solutions</h4>
+</div>
+</div>
+<div id="outline-container-org37ee62a" class="outline-3">
+<h3 id="org37ee62a"><span class="section-number-3">2.8.</span> Post-Processing</h3>
+</div>
+<div id="outline-container-org3355e50" class="outline-3">
+<h3 id="org3355e50"><span class="section-number-3">2.9.</span> Advanced Interfaces</h3>
+<div class="outline-text-3" id="text-2-9">
+</div>
+<div id="outline-container-orgd1c6d76" class="outline-4">
+<h4 id="orgd1c6d76"><span class="section-number-4">2.9.1.</span> Minimalized Representation</h4>
+</div>
+<div id="outline-container-org5182746" class="outline-4">
+<h4 id="org5182746"><span class="section-number-4">2.9.2.</span> Quasi-Periodic Response Analysis</h4>
+</div>
+</div>
+</div>
+<div id="outline-container-orgb18c917" class="outline-2">
+<h2 id="orgb18c917"><span class="section-number-2">3.</span> Examples</h2>
 <div class="outline-text-2" id="text-3">
 </div>
-<div id="outline-container-org4c46a4b" class="outline-3">
-<h3 id="org4c46a4b"><span class="section-number-3">3.1.</span> Single Bar</h3>
+<div id="outline-container-org0e03c19" class="outline-3">
+<h3 id="org0e03c19"><span class="section-number-3">3.1.</span> Single Bar</h3>
 <div class="outline-text-3" id="text-3-1">
 <p>
-<a id="orgd2f9d69"></a>
-This is by far the simplest example and can be used as a starting point to understand the usage of the tool. It conducts the analysis of a fixed-fixed 1D bar with the material properties in tab. <a href="#orgeb70078">1</a>.
+<a id="org411302d"></a>
+This is by far the simplest example and can be used as a starting point to understand the usage of the tool. It conducts the analysis of a fixed-fixed 1D bar with the material properties in tab. <a href="#org7d7f4e8">1</a>.
 </p>
-<table id="orgeb70078" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<table id="org7d7f4e8" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 <caption class="t-above"><span class="table-number">Table 1:</span> Material Properties for the example in <a href="https://github.com/Nidish96/wavevib/tree/master/EXAMPLES/a_singlebar.m">https://github.com/Nidish96/wavevib/tree/master/EXAMPLES/a<sub>singlebar.m</sub></a></caption>
 
 <colgroup>
@@ -272,8 +367,8 @@ This is by far the simplest example and can be used as a starting point to under
 </tbody>
 </table>
 </div>
-<div id="outline-container-org8b8cb48" class="outline-4">
-<h4 id="org8b8cb48"><span class="section-number-4">3.1.1.</span> Code Overview</h4>
+<div id="outline-container-org46fee92" class="outline-4">
+<h4 id="org46fee92"><span class="section-number-4">3.1.1.</span> Code Overview</h4>
 <div class="outline-text-4" id="text-3-1-1">
 <details class="code-details"
                  style ="padding: 1em;
@@ -332,7 +427,7 @@ This is by far the simplest example and can be used as a starting point to under
 The governing equations for the bar is
 </p>
 \begin{align}
-\label{orgc1b7a3c}
+\label{org732a021}
 \rho \frac{\partial^2 u}{\partial t^2} - E_y \frac{\partial^2 u}{\partial x^2} &= 0 \qquad x\in (0, \ell)\\
 u &= 0 \qquad x=0, \ell.
 \end{align}
@@ -340,7 +435,7 @@ u &= 0 \qquad x=0, \ell.
 Using the standard ansatz $u(x,t)=\frac{U}{2} e<sup>j(kx-&omega; t)</sup>+c.c.$, the continuum domain yields the dispersion relationship,
 </p>
 \begin{equation}
-\label{orge247fde}
+\label{orgac2c772}
 k(\omega) = \pm \frac{\omega}{\sqrt{E_y/\rho}}.
 \end{equation}
 <p>
@@ -361,7 +456,7 @@ The matrix <code>wcomps</code> provides information about the different wave com
 Under this notation, the wave-based representation of the solution is,
 </p>
 \begin{equation}
-\label{org512c427}
+\label{orgde94010}
 u(x,t) = (a^+ e^{jkx}+a^- e^{-jkx})e^{-j\omega t} + c.c.
 \end{equation}
 
@@ -418,10 +513,10 @@ The <code>wcomps</code> matrix created before is supplied at this point. Each pi
                     </strong>
                   </summary>
 <p>
-A fixed boundary condition is given above in eq. \eqref{orgc1b7a3c}. Employing the ansatz (eq. \eqref{org512c427}) at such a point yields
+A fixed boundary condition is given above in eq. \eqref{org732a021}. Employing the ansatz (eq. \eqref{orgde94010}) at such a point yields
 </p>
 \begin{equation}
-\label{org98bc40a}
+\label{org9ba0696}
 u(0,t) = 0 \implies \begin{bmatrix} 1 & 1 \end{bmatrix} \begin{bmatrix} a^+\\ a^- \end{bmatrix} = 0
 \end{equation}
 <p>
@@ -516,34 +611,34 @@ At any such singular point, one may inspect the mode shape by looking at the nul
 </details>
 </div>
 </div>
-<div id="outline-container-org3d891fb" class="outline-4">
-<h4 id="org3d891fb"><span class="section-number-4">3.1.2.</span> Results</h4>
+<div id="outline-container-orgf8147f1" class="outline-4">
+<h4 id="orgf8147f1"><span class="section-number-4">3.1.2.</span> Results</h4>
 <div class="outline-text-4" id="text-3-1-2">
 <p>
-Fig. <a href="#org7bed35e">2</a> presents the determinant plotted for different frequency values in log-scale. All the points where drop-offs are seen are the resonances.
+Fig. <a href="#org943f692">2</a> presents the determinant plotted for different frequency values in log-scale. All the points where drop-offs are seen are the resonances.
 </p>
 
-<div id="org7bed35e" class="figure">
+<div id="org943f692" class="figure">
 <p><img src="./FIGS/a_out.png" alt="a_out.png" width="600px" />
 </p>
 <p><span class="figure-number">Figure 2: </span>Jacobian determinant for the linear bar example</p>
 </div>
 </div>
 </div>
-<div id="outline-container-org8decb1b" class="outline-4">
-<h4 id="org8decb1b"><span class="section-number-4">3.1.3.</span> <span class="todo TODO">TODO</span> Show mode-shapes in results</h4>
+<div id="outline-container-orgde583e2" class="outline-4">
+<h4 id="orgde583e2"><span class="section-number-4">3.1.3.</span> <span class="todo TODO">TODO</span> Show mode-shapes in results</h4>
 </div>
 </div>
-<div id="outline-container-org892a6df" class="outline-3">
-<h3 id="org892a6df"><span class="section-number-3">3.2.</span> Linear-Jointed Bars</h3>
+<div id="outline-container-org70a7bcb" class="outline-3">
+<h3 id="org70a7bcb"><span class="section-number-3">3.2.</span> Linear-Jointed Bars</h3>
 <div class="outline-text-3" id="text-3-2">
 <p>
-<a id="org6586bdc"></a>
+<a id="orga5b0e4f"></a>
 We will next look at the example of linear jointed bars. This is a simplified version of the nonlinear system considered in <a href="#citeproc_bib_item_1">[1]</a>.
 </p>
 </div>
-<div id="outline-container-orgb0ffc4d" class="outline-4">
-<h4 id="orgb0ffc4d"><span class="section-number-4">3.2.1.</span> Code Overview</h4>
+<div id="outline-container-org18e6486" class="outline-4">
+<h4 id="org18e6486"><span class="section-number-4">3.2.1.</span> Code Overview</h4>
 <div class="outline-text-4" id="text-3-2-1">
 <details class="code-details"
                  style ="padding: 1em;
@@ -561,7 +656,7 @@ We will next look at the example of linear jointed bars. This is a simplified ve
                     </strong>
                   </summary>
 <p>
-The initial setup is very similar to that in sec. <a href="#orgd2f9d69">3.1</a>.
+The initial setup is very similar to that in sec. <a href="#org411302d">3.1</a>.
 </p>
 <div class="org-src-container">
 <pre class="src src-octave"><span class="linenr"> 1: </span>addpath(<span style="color: #ffa500;">'../ROUTINES/SOLVERS/'</span>)
@@ -762,37 +857,37 @@ The results are then plotted for the point right after the joint using the follo
 </details>
 </div>
 </div>
-<div id="outline-container-orge164dfc" class="outline-4">
-<h4 id="orge164dfc"><span class="section-number-4">3.2.2.</span> Results</h4>
+<div id="outline-container-org1eaa3f3" class="outline-4">
+<h4 id="org1eaa3f3"><span class="section-number-4">3.2.2.</span> Results</h4>
 <div class="outline-text-4" id="text-3-2-2">
 <p>
-Fig. <a href="#org854329f">3</a> presents the linear forced response for this system (results have been validated against the analytical results). 
+Fig. <a href="#org84f3dc1">3</a> presents the linear forced response for this system (results have been validated against the analytical results). 
 </p>
 
-<div id="org854329f" class="figure">
+<div id="org84f3dc1" class="figure">
 <p><img src="./FIGS/b_out.png" alt="b_out.png" width="600px" />
 </p>
 <p><span class="figure-number">Figure 3: </span>Linear forced response of the linear-jointed bar.</p>
 </div>
 </div>
 </div>
-<div id="outline-container-orgea5abcd" class="outline-4">
-<h4 id="orgea5abcd"><span class="section-number-4">3.2.3.</span> <span class="todo TODO">TODO</span> Include a nicely labeled diagram in the description.</h4>
+<div id="outline-container-org5f997ed" class="outline-4">
+<h4 id="org5f997ed"><span class="section-number-4">3.2.3.</span> <span class="todo TODO">TODO</span> Include a nicely labeled diagram in the description.</h4>
 </div>
-<div id="outline-container-orgd448792" class="outline-4">
-<h4 id="orgd448792"><span class="section-number-4">3.2.4.</span> <span class="todo TODO">TODO</span> Describe how to use <a href="https://github.com/Nidish96/wavevib/tree/master/ROUTINES/WBM/WVEVALWCOFS.m">WVEVALWCOFS</a> for evaluating wave coefficients and plot deflection shape.</h4>
+<div id="outline-container-orgf37d124" class="outline-4">
+<h4 id="orgf37d124"><span class="section-number-4">3.2.4.</span> <span class="todo TODO">TODO</span> Describe how to use WVEVALWCOFS for evaluating wave coefficients and plot deflection shape.</h4>
 </div>
 </div>
-<div id="outline-container-orga059005" class="outline-3">
-<h3 id="orga059005"><span class="section-number-3">3.3.</span> Nonlinear-Jointed Bars</h3>
+<div id="outline-container-orgaf2a15c" class="outline-3">
+<h3 id="orgaf2a15c"><span class="section-number-3">3.3.</span> Nonlinear-Jointed Bars</h3>
 <div class="outline-text-3" id="text-3-3">
 <p>
-<a id="orgf2e862b"></a>
+<a id="org4bd0854"></a>
 This is the first nonlinear jointed example. This is the exact same example considered in <a href="#citeproc_bib_item_1">[1]</a>. 
 </p>
 </div>
-<div id="outline-container-orgffeb734" class="outline-4">
-<h4 id="orgffeb734"><span class="section-number-4">3.3.1.</span> Code Overview</h4>
+<div id="outline-container-orgfa10803" class="outline-4">
+<h4 id="orgfa10803"><span class="section-number-4">3.3.1.</span> Code Overview</h4>
 <div class="outline-text-4" id="text-3-3-1">
 <details class="code-details"
                  style ="padding: 1em;
@@ -810,7 +905,7 @@ This is the first nonlinear jointed example. This is the exact same example cons
                     </strong>
                   </summary>
 <p>
-The initial setup is identical to that for sec. <a href="#org6586bdc">3.2</a> since the model is the same. 
+The initial setup is identical to that for sec. <a href="#orga5b0e4f">3.2</a> since the model is the same.
 </p>
 <div class="org-src-container">
 <pre class="src src-octave"><span class="linenr"> 1: </span>addpath(<span style="color: #ffa500;">'../ROUTINES/SOLVERS/'</span>)
@@ -1114,7 +1209,7 @@ Loop over the desired force amplitudes and do the continuation analysis.
                     </strong>
                   </summary>
 <p>
-Now plot the forced response (similar to sec. <a href="#org6586bdc">3.2</a>) at the point right after the joint.
+Now plot the forced response (similar to sec. <a href="#orga5b0e4f">3.2</a>) at the point right after the joint.
 </p>
 <div class="org-src-container">
 <pre class="src src-octave"><span class="linenr">78: </span>opi <span style="color: #b0c4de;">=</span>  9<span style="color: #b0c4de;">:</span>10<span style="color: #b0c4de;">;</span>
@@ -1144,37 +1239,37 @@ Now plot the forced response (similar to sec. <a href="#org6586bdc">3.2</a>) at 
 </details>
 </div>
 </div>
-<div id="outline-container-org259f429" class="outline-4">
-<h4 id="org259f429"><span class="section-number-4">3.3.2.</span> Results</h4>
+<div id="outline-container-org744fd9d" class="outline-4">
+<h4 id="org744fd9d"><span class="section-number-4">3.3.2.</span> Results</h4>
 <div class="outline-text-4" id="text-3-3-2">
 <p>
-Fig. <a href="#orgd737bf8">4</a> presents the forced response for this example. It shows the classical coexisting solutions behavior for cubically stiff systems as well as an amplitude-dependent nonlinear behavior.
+Fig. <a href="#org6611ba6">4</a> presents the forced response for this example. It shows the classical coexisting solutions behavior for cubically stiff systems as well as an amplitude-dependent nonlinear behavior.
 </p>
 
-<div id="orgd737bf8" class="figure">
+<div id="org6611ba6" class="figure">
 <p><img src="./FIGS/c_out.png" alt="c_out.png" width="600px" />
 </p>
 <p><span class="figure-number">Figure 4: </span>Nonlinear forced response of the jointed bar.</p>
 </div>
 </div>
 </div>
-<div id="outline-container-org56cc2a8" class="outline-4">
-<h4 id="org56cc2a8"><span class="section-number-4">3.3.3.</span> <span class="todo TODO">TODO</span> Include a nice schematic diagram</h4>
+<div id="outline-container-org5ff69cd" class="outline-4">
+<h4 id="org5ff69cd"><span class="section-number-4">3.3.3.</span> <span class="todo TODO">TODO</span> Include a nice schematic diagram</h4>
 </div>
-<div id="outline-container-org22672aa" class="outline-4">
-<h4 id="org22672aa"><span class="section-number-4">3.3.4.</span> <span class="todo TODO">TODO</span> Describe how to use <a href="https://github.com/Nidish96/wavevib/tree/master/ROUTINES/WBM/WVEVALWCOFS.m">WVEVALWCOFS</a> for evaluating wave coefficients and plot deflection shape.</h4>
+<div id="outline-container-org994657e" class="outline-4">
+<h4 id="org994657e"><span class="section-number-4">3.3.4.</span> <span class="todo TODO">TODO</span> Describe how to use WVEVALWCOFS for evaluating wave coefficients and plot deflection shape.</h4>
 </div>
 </div>
-<div id="outline-container-orge8767c3" class="outline-3">
-<h3 id="orge8767c3"><span class="section-number-3">3.4.</span> Nonlinear-Jointed Euler-Bernoulli Beams</h3>
+<div id="outline-container-orge32b5fe" class="outline-3">
+<h3 id="orge32b5fe"><span class="section-number-3">3.4.</span> Nonlinear-Jointed Euler-Bernoulli Beams</h3>
 <div class="outline-text-3" id="text-3-4">
 <p>
-<a id="org38a47fc"></a>
+<a id="orgec668d4"></a>
 This is a nonlinear jointed Euler-Bernoulli beams example. The reason for including this is to show how to handle evanescent wave components (non-traveling wave components).
 </p>
 </div>
-<div id="outline-container-org70cc16f" class="outline-4">
-<h4 id="org70cc16f"><span class="section-number-4">3.4.1.</span> Code Overview</h4>
+<div id="outline-container-org41cf0b4" class="outline-4">
+<h4 id="org41cf0b4"><span class="section-number-4">3.4.1.</span> Code Overview</h4>
 <div class="outline-text-4" id="text-3-4-1">
 <details class="code-details"
                  style ="padding: 1em;
@@ -1192,7 +1287,7 @@ This is a nonlinear jointed Euler-Bernoulli beams example. The reason for includ
                     </strong>
                   </summary>
 <p>
-The model setup is very similar to the example in sec. <a href="#orgf2e862b">3.3</a>, but adapted for the Euler-Bernoulli Beam context.
+The model setup is very similar to the example in sec. <a href="#org4bd0854">3.3</a>, but adapted for the Euler-Bernoulli Beam context.
 </p>
 <div class="org-src-container">
 <pre class="src src-octave"><span class="linenr"> 1: </span>addpath(<span style="color: #ffa500;">'../ROUTINES/SOLVERS/'</span>)
@@ -1281,7 +1376,7 @@ The joint setup is quite similar to before but with the key difference that this
 </pre>
 </div>
 <p>
-The nonlinearity is realized by the same <a href="https://github.com/Nidish96/wavevib/tree/master/EXAMPLES/HDUFF.m">HDUFF</a> routine as used in sec. <a href="#orgf2e862b">3.3</a>.
+The nonlinearity is realized by the same <a href="https://github.com/Nidish96/wavevib/tree/master/EXAMPLES/HDUFF.m">HDUFF</a> routine as used in sec. <a href="#org4bd0854">3.3</a>.
 </p>
 
 
@@ -1440,41 +1535,41 @@ Plot the response at the excitation location.
 </details>
 </div>
 </div>
-<div id="outline-container-org640af4d" class="outline-4">
-<h4 id="org640af4d"><span class="section-number-4">3.4.2.</span> Results</h4>
+<div id="outline-container-org3867417" class="outline-4">
+<h4 id="org3867417"><span class="section-number-4">3.4.2.</span> Results</h4>
 <div class="outline-text-4" id="text-3-4-2">
 
-<div id="org25e7dc1" class="figure">
+<div id="org9f49f3d" class="figure">
 <p><img src="./FIGS/d_out.png" alt="d_out.png" width="600px" />
 </p>
 <p><span class="figure-number">Figure 5: </span>Forced response of the non-linear-jointed beam.</p>
 </div>
 </div>
 </div>
-<div id="outline-container-org71fede1" class="outline-4">
-<h4 id="org71fede1"><span class="section-number-4">3.4.3.</span> <span class="todo TODO">TODO</span> Include a nicely labeled schematic of the considered system</h4>
+<div id="outline-container-org1c678a6" class="outline-4">
+<h4 id="org1c678a6"><span class="section-number-4">3.4.3.</span> <span class="todo TODO">TODO</span> Include a nicely labeled schematic of the considered system</h4>
 </div>
-<div id="outline-container-orgda8cba0" class="outline-4">
-<h4 id="orgda8cba0"><span class="section-number-4">3.4.4.</span> <span class="todo TODO">TODO</span> Describe how to use <a href="https://github.com/Nidish96/wavevib/tree/master/ROUTINES/WBM/WVEVALWCOFS.m">WVEVALWCOFS</a> for evaluating wave coefficients and plot deflection shape.</h4>
+<div id="outline-container-org843ef7b" class="outline-4">
+<h4 id="org843ef7b"><span class="section-number-4">3.4.4.</span> <span class="todo TODO">TODO</span> Describe how to use WVEVALWCOFS for evaluating wave coefficients and plot deflection shape.</h4>
 </div>
 </div>
-<div id="outline-container-orgd576ef1" class="outline-3">
-<h3 id="orgd576ef1"><span class="section-number-3">3.5.</span> Impacting Cantilever Beams</h3>
+<div id="outline-container-org1fa9fce" class="outline-3">
+<h3 id="org1fa9fce"><span class="section-number-3">3.5.</span> Impacting Cantilever Beams</h3>
 <div class="outline-text-3" id="text-3-5">
 <p>
 This is an example from <a href="#citeproc_bib_item_3">[3]</a>, where the dynamics of an impacting cantilever beam setup is investigated. The technical interest in this example is motivated from the broader are of vibro-impact dynamics<a href="#citeproc_bib_item_4">[4]</a>, wherein the advantages of the wave based approach are expected to be particularly relevant (due to the avoidance of spatial discretization).
 </p>
 
 <p>
-A schematic of the setup is shown below in fig. <a href="#org33fec67">6</a> and the material properties used for this example are presented in tab. <a href="#org7cbe803">2</a>.
+A schematic of the setup is shown below in fig. <a href="#orgdcf47e0">6</a> and the material properties used for this example are presented in tab. <a href="#org4970af2">2</a>.
 </p>
 
-<div id="org33fec67" class="figure">
+<div id="orgdcf47e0" class="figure">
 <p><img src="./FIGS/iclbeamsetup.png" alt="iclbeamsetup.png" />
 </p>
 <p><span class="figure-number">Figure 6: </span>Schematic of the impacting cantilever beam setup <a href="#citeproc_bib_item_3">[3]</a></p>
 </div>
-<table id="org7cbe803" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<table id="org4970af2" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 <caption class="t-above"><span class="table-number">Table 2:</span> Material Properties assumed for the example in <a href="https://github.com/Nidish96/wavevib/tree/master/EXAMPLES/e_nlimpactclbeams.m">https://github.com/Nidish96/wavevib/tree/master/EXAMPLES/e_nlimpactclbeams.m</a></caption>
 
 <colgroup>
@@ -1520,8 +1615,8 @@ A schematic of the setup is shown below in fig. <a href="#org33fec67">6</a> and 
 </tbody>
 </table>
 </div>
-<div id="outline-container-orgdb6a6bf" class="outline-4">
-<h4 id="orgdb6a6bf"><span class="section-number-4">3.5.1.</span> Code Overview</h4>
+<div id="outline-container-orge63293e" class="outline-4">
+<h4 id="orge63293e"><span class="section-number-4">3.5.1.</span> Code Overview</h4>
 <div class="outline-text-4" id="text-3-5-1">
 <p>
 The most important part of the code are from line 16 to line 107. The complete code is explained below in different blocks (click to expand each block).
@@ -1545,7 +1640,7 @@ The most important part of the code are from line 16 to line 107. The complete c
 Here we just assign variables to the properties that will be useful for declaring properties.
 </p>
 <div class="org-src-container">
-<pre class="src src-octave" id="org3634ef0"><span class="linenr"> 1: </span>addpath(<span style="color: #ffa500;">'../ROUTINES/SOLVERS/'</span>)
+<pre class="src src-octave" id="org4dda8ae"><span class="linenr"> 1: </span>addpath(<span style="color: #ffa500;">'../ROUTINES/SOLVERS/'</span>)
 <span class="linenr"> 2: </span>addpath(<span style="color: #ffa500;">'../ROUTINES/WBM/'</span>)
 <span class="linenr"> 3: </span>
 <span class="linenr"> 4: </span><span style="color: #cd5c5c;">%% </span><span style="color: #cd5c5c;">Setup Model</span>
@@ -1587,7 +1682,7 @@ Here we just assign variables to the properties that will be useful for declarin
 Here we declare the dispersion relationship that will be used in the model
 </p>
 <div class="org-src-container">
-<pre class="src src-octave" id="org2a8d440"><span class="linenr">19: </span><span style="color: #cd5c5c;">% </span><span style="color: #cd5c5c;">Declare a library of dispersion relationships (only one here) </span>
+<pre class="src src-octave" id="org13ef9a0"><span class="linenr">19: </span><span style="color: #cd5c5c;">% </span><span style="color: #cd5c5c;">Declare a library of dispersion relationships (only one here) </span>
 <span class="linenr">20: </span>Klib <span style="color: #b0c4de;">=</span> struct(<span style="color: #ffa500;">'K'</span><span style="color: #b0c4de;">,</span> @(w<span style="color: #b0c4de;">,</span>xi) ((rho<span style="color: #b0c4de;">*</span>Ar<span style="color: #b0c4de;">*</span>(w<span style="color: #b0c4de;">.^</span>2<span style="color: #b0c4de;">+</span>1j<span style="color: #b0c4de;">*</span>w<span style="color: #b0c4de;">*</span>al))<span style="color: #b0c4de;">./</span>(Ey<span style="color: #b0c4de;">*</span>Iy<span style="color: #b0c4de;">*</span>(1<span style="color: #b0c4de;">-</span>1j<span style="color: #b0c4de;">*</span>w<span style="color: #b0c4de;">*</span>bt)))<span style="color: #b0c4de;">.^</span>(0.25) )<span style="color: #b0c4de;">;</span> 
 <span class="linenr">21: </span>wcomps <span style="color: #b0c4de;">=</span> [1 1<span style="color: #b0c4de;">;</span>  <span style="color: #cd5c5c;">% First component -&gt; exp(  k x )</span>
 <span class="linenr">22: </span>         <span style="color: #b0c4de;">-</span>1 1<span style="color: #b0c4de;">;</span>  <span style="color: #cd5c5c;">% Second component-&gt; exp( -k x )</span>
@@ -1607,7 +1702,7 @@ The format is that the 'K' is a function of frequency 'w' and some parameter (co
 Here is an example of how to declare multiple dispersion relationships:
 </p>
 <div class="org-src-container">
-<pre class="src src-octave" id="org08503ba">Klib <span style="color: #b0c4de;">=</span> [struct(<span style="color: #ffa500;">'K'</span><span style="color: #b0c4de;">,</span> @(w<span style="color: #b0c4de;">,</span>xi) sqrt((<span style="color: #b0c4de;">-</span>b.v(w<span style="color: #b0c4de;">,</span>xi)<span style="color: #b0c4de;">+</span>sqrt(b.v(w<span style="color: #b0c4de;">,</span>xi)<span style="color: #b0c4de;">.^</span>2<span style="color: #b0c4de;">-</span>4<span style="color: #b0c4de;">*</span>a<span style="color: #b0c4de;">*</span>c.v(w<span style="color: #b0c4de;">,</span>xi)))<span style="color: #b0c4de;">/</span>(2<span style="color: #b0c4de;">*</span>a)))<span style="color: #b0c4de;">;</span> <span style="color: #b0c4de;">...</span>
+<pre class="src src-octave" id="orgcbf412a">Klib <span style="color: #b0c4de;">=</span> [struct(<span style="color: #ffa500;">'K'</span><span style="color: #b0c4de;">,</span> @(w<span style="color: #b0c4de;">,</span>xi) sqrt((<span style="color: #b0c4de;">-</span>b.v(w<span style="color: #b0c4de;">,</span>xi)<span style="color: #b0c4de;">+</span>sqrt(b.v(w<span style="color: #b0c4de;">,</span>xi)<span style="color: #b0c4de;">.^</span>2<span style="color: #b0c4de;">-</span>4<span style="color: #b0c4de;">*</span>a<span style="color: #b0c4de;">*</span>c.v(w<span style="color: #b0c4de;">,</span>xi)))<span style="color: #b0c4de;">/</span>(2<span style="color: #b0c4de;">*</span>a)))<span style="color: #b0c4de;">;</span> <span style="color: #b0c4de;">...</span>
     struct(<span style="color: #ffa500;">'K'</span><span style="color: #b0c4de;">,</span> @(w<span style="color: #b0c4de;">,</span>xi) sqrt((<span style="color: #b0c4de;">-</span>b.v(w<span style="color: #b0c4de;">,</span>xi)<span style="color: #b0c4de;">-</span>sqrt(b.v(w<span style="color: #b0c4de;">,</span>xi)<span style="color: #b0c4de;">.^</span>2<span style="color: #b0c4de;">-</span>4<span style="color: #b0c4de;">*</span>a<span style="color: #b0c4de;">*</span>c.v(w<span style="color: #b0c4de;">,</span>xi)))<span style="color: #b0c4de;">/</span>(2<span style="color: #b0c4de;">*</span>a)))]<span style="color: #b0c4de;">;</span>
 wcomps <span style="color: #b0c4de;">=</span> [1j 1<span style="color: #b0c4de;">;</span>  <span style="color: #cd5c5c;">% +jK1</span>
          <span style="color: #b0c4de;">-</span>1j 1<span style="color: #b0c4de;">;</span>  <span style="color: #cd5c5c;">% -jK1</span>
@@ -1638,20 +1733,20 @@ wcomps <span style="color: #b0c4de;">=</span> [1j 1<span style="color: #b0c4de;"
 Firstly, the difference "pieces" of the model are specified:
 </p>
 <div class="org-src-container">
-<pre class="src src-octave" id="orgebe46ff"><span class="linenr">29: </span><span style="color: #cd5c5c;">% </span><span style="color: #cd5c5c;">Setup "wave-based pieces"</span>
+<pre class="src src-octave" id="orgffacce9"><span class="linenr">29: </span><span style="color: #cd5c5c;">% </span><span style="color: #cd5c5c;">Setup "wave-based pieces"</span>
 <span class="linenr">30: </span>pcs <span style="color: #b0c4de;">=</span> [struct(<span style="color: #ffa500;">'coords'</span><span style="color: #b0c4de;">,</span> [0 0<span style="color: #b0c4de;">;</span>xF1 0<span style="color: #b0c4de;">;</span>L1 0]<span style="color: #b0c4de;">,</span> <span style="color: #ffa500;">'wcomps'</span><span style="color: #b0c4de;">,</span> wcomps)<span style="color: #b0c4de;">;</span>
 <span class="linenr">31: </span>                         struct(<span style="color: #ffa500;">'coords'</span><span style="color: #b0c4de;">,</span> [L1 gap<span style="color: #b0c4de;">;</span>L1<span style="color: #b0c4de;">+</span>L2 gap]<span style="color: #b0c4de;">,</span> <span style="color: #ffa500;">'wcomps'</span><span style="color: #b0c4de;">,</span> wcomps)<span style="color: #b0c4de;">;</span>
 <span class="linenr">32: </span>                         struct(<span style="color: #ffa500;">'coords'</span><span style="color: #b0c4de;">,</span> [L1 <span style="color: #b0c4de;">-</span>gap<span style="color: #b0c4de;">;</span>L1<span style="color: #b0c4de;">+</span>L2 <span style="color: #b0c4de;">-</span>gap]<span style="color: #b0c4de;">,</span> <span style="color: #ffa500;">'wcomps'</span><span style="color: #b0c4de;">,</span> wcomps)]<span style="color: #b0c4de;">;</span>
 </pre>
 </div>
 <p>
-In this model there are three pieces: one for each beam. The first beam is declared with three coordinate points (each row is a separate point). The second point is introduced at the excitation location. Note here that each piece is also associated with its own wave components (declared above in snippet <a href="#org2a8d440">1</a>).
+In this model there are three pieces: one for each beam. The first beam is declared with three coordinate points (each row is a separate point). The second point is introduced at the excitation location. Note here that each piece is also associated with its own wave components (declared above in snippet <a href="#org13ef9a0">1</a>).
 </p></li>
 <li><p>
 Next, the boundary conditions are specified:
 </p>
 <div class="org-src-container">
-<pre class="src src-octave" id="org6f8c4f0"><span class="linenr">33: </span><span style="color: #cd5c5c;">%% </span><span style="color: #cd5c5c;">Setup boundary conditions</span>
+<pre class="src src-octave" id="org185bf32"><span class="linenr">33: </span><span style="color: #cd5c5c;">%% </span><span style="color: #cd5c5c;">Setup boundary conditions</span>
 <span class="linenr">34: </span>bcs <span style="color: #b0c4de;">=</span> [struct(<span style="color: #ffa500;">'i'</span><span style="color: #b0c4de;">,</span> 1<span style="color: #b0c4de;">,</span> <span style="color: #ffa500;">'cofs'</span><span style="color: #b0c4de;">,</span> @(w<span style="color: #b0c4de;">,</span>xi) [1 1 1 1<span style="color: #b0c4de;">;</span> 1 <span style="color: #b0c4de;">-</span>1 1j <span style="color: #b0c4de;">-</span>1j])<span style="color: #b0c4de;">;</span>  <span style="color: #cd5c5c;">% fixed end</span>
 <span class="linenr">35: </span>                         struct(<span style="color: #ffa500;">'i'</span><span style="color: #b0c4de;">,</span> 5<span style="color: #b0c4de;">,</span> <span style="color: #ffa500;">'cofs'</span><span style="color: #b0c4de;">,</span> @(w<span style="color: #b0c4de;">,</span>xi) [1 1 1 1<span style="color: #b0c4de;">;</span> 1 <span style="color: #b0c4de;">-</span>1 1j <span style="color: #b0c4de;">-</span>1j])<span style="color: #b0c4de;">;</span>     <span style="color: #cd5c5c;">% fixed end</span>
 <span class="linenr">36: </span>                         struct(<span style="color: #ffa500;">'i'</span><span style="color: #b0c4de;">,</span> 7<span style="color: #b0c4de;">,</span> <span style="color: #ffa500;">'cofs'</span><span style="color: #b0c4de;">,</span> @(w<span style="color: #b0c4de;">,</span>xi) [1 1 1 1<span style="color: #b0c4de;">;</span> 1 <span style="color: #b0c4de;">-</span>1 1j <span style="color: #b0c4de;">-</span>1j])<span style="color: #b0c4de;">;</span>     <span style="color: #cd5c5c;">% fixed end</span>
@@ -1711,7 +1806,7 @@ We now specify the non-linear joint. This is done by first specifying the AFT (A
 The beam interactions are modeled as a three-way joint connecting the three beams. Denoting the relevant tip displacement of the primary beam as beam \(u_1\), and the two secondary beams as \(u_{2a}\) and \(u_{2b}\) respectfully, the force balance equations are,
 </p>
 \begin{align}
-\label{org9490745}
+\label{org4480195}
   -E_y I_y \frac{\partial^3 u_{2a}}{\partial x^3} &= f_{joint} (u_{2a}-u_1)\\
   -E_y I_y \frac{\partial^3 u_{2b}}{\partial x^3} &= f_{joint} (u_{2b}-u_1)\\
   -E_y I_y \frac{\partial^3 u_1}{\partial x^3} &= -E_y I_y \left(\frac{\partial^3 u_{2a}}{\partial x^3} + \frac{\partial^3 u_{2b}}{\partial x^3} \right)
@@ -2034,24 +2129,24 @@ It is recommended to try running <a href="https://github.com/Nidish96/wavevib/tr
 </p>
 </div>
 </div>
-<div id="outline-container-org0a48baa" class="outline-4">
-<h4 id="org0a48baa"><span class="section-number-4">3.5.2.</span> Results</h4>
+<div id="outline-container-org96fc5dc" class="outline-4">
+<h4 id="org96fc5dc"><span class="section-number-4">3.5.2.</span> Results</h4>
 <div class="outline-text-4" id="text-3-5-2">
 <p>
-Fig. <a href="#orgf6940c3">7</a> plots the forced response results of this system (first harmonic) computed at three difference excitation amplitude levels. The expected behavior  corresponding to impact (linear until the gap is reached, followed by stiffening behavior) is observed. The tip displacement of the primary beam is plotted in the figures.
+Fig. <a href="#org1dd176a">7</a> plots the forced response results of this system (first harmonic) computed at three difference excitation amplitude levels. The expected behavior  corresponding to impact (linear until the gap is reached, followed by stiffening behavior) is observed. The tip displacement of the primary beam is plotted in the figures.
 </p>
 
-<div id="orgf6940c3" class="figure">
+<div id="org1dd176a" class="figure">
 <p><img src="./FIGS/E_out.png" alt="E_out.png" width="600px" />
 </p>
 <p><span class="figure-number">Figure 7: </span>Forced Response Results for the Impacting Cantilever Beam Example</p>
 </div>
 
 <p>
-Fig. <a href="#orge49eaaf">8</a> below plots the same along with the deflection shape corresponding to the first harmonic. A slider is implemented in <a href="https://github.com/Nidish96/wavevib/tree/master/EXAMPLES/e_nlimpactclbeams.m">the matlab script</a> that allows one to observe the deflection shape at different points along the forced response. So it is recommended to try running the code and moving the slider around a little bit. 
+Fig. <a href="#orgdff28f1">8</a> below plots the same along with the deflection shape corresponding to the first harmonic. A slider is implemented in <a href="https://github.com/Nidish96/wavevib/tree/master/EXAMPLES/e_nlimpactclbeams.m">the matlab script</a> that allows one to observe the deflection shape at different points along the forced response. So it is recommended to try running the code and moving the slider around a little bit. 
 </p>
 
-<div id="orge49eaaf" class="figure">
+<div id="orgdff28f1" class="figure">
 <p><img src="./FIGS/E_outshape.png" alt="E_outshape.png" width="600px" />
 </p>
 <p><span class="figure-number">Figure 8: </span>Forced Response along with deflection shapes</p>
@@ -2064,12 +2159,12 @@ Fig. <a href="#orge49eaaf">8</a> below plots the same along with the deflection 
 </div>
 </div>
 </div>
-<div id="outline-container-orgca1d649" class="outline-2">
-<h2 id="orgca1d649"><span class="section-number-2">4.</span> Development Avenues</h2>
+<div id="outline-container-org4047051" class="outline-2">
+<h2 id="org4047051"><span class="section-number-2">4.</span> Development Avenues</h2>
 <div class="outline-text-2" id="text-4">
 </div>
-<div id="outline-container-orgb175d73" class="outline-3">
-<h3 id="orgb175d73"><span class="section-number-3">4.1.</span> <span class="todo TODO">TODO</span> Desirable Features <code>[2/6]</code></h3>
+<div id="outline-container-org1cb89bc" class="outline-3">
+<h3 id="org1cb89bc"><span class="section-number-3">4.1.</span> <span class="todo TODO">TODO</span> Desirable Features</h3>
 <div class="outline-text-3" id="text-4-1">
 <ol class="org-ol">
 <li class="off"><code>[&#xa0;]</code> 3D frame joint constitutions</li>
@@ -2081,8 +2176,8 @@ Fig. <a href="#orge49eaaf">8</a> below plots the same along with the deflection 
 </ol>
 </div>
 </div>
-<div id="outline-container-org518c268" class="outline-3">
-<h3 id="org518c268"><span class="section-number-3">4.2.</span> <span class="todo TODO">TODO</span> Bugfixes</h3>
+<div id="outline-container-org41d19b3" class="outline-3">
+<h3 id="org41d19b3"><span class="section-number-3">4.2.</span> <span class="todo TODO">TODO</span> Bugfixes</h3>
 <div class="outline-text-3" id="text-4-2">
 <ol class="org-ol">
 <li>Multiharmonic excitation at single point has to be implemented</li>
@@ -2093,8 +2188,8 @@ Fig. <a href="#orge49eaaf">8</a> below plots the same along with the deflection 
 </div>
 </div>
 </div>
-<div id="outline-container-orgc03543d" class="outline-2">
-<h2 id="orgc03543d"><span class="section-number-2">5.</span> References</h2>
+<div id="outline-container-orgc5803c6" class="outline-2">
+<h2 id="orgc5803c6"><span class="section-number-2">5.</span> References</h2>
 <div class="outline-text-2" id="text-5">
 <style>.csl-left-margin{float: left; padding-right: 0em;}
  .csl-right-inline{margin: 0 0 0 1em;}</style><div class="csl-bib-body">
@@ -2120,7 +2215,7 @@ This website was generated using org-mode on emacs with the Bigblow html theme f
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Nidish Narayanaa Balaji</p>
-<p class="date">Created: 2023-05-19 Fri 15:53</p>
+<p class="date">Created: 2023-05-19 Fri 16:53</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
