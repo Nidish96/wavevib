@@ -5,7 +5,7 @@
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-bigblow.setup
 #+HTML: <style> summary:hover {background:pink;} </style>
 # #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
-# #+HTML_HEAD: <style> #content{max-width:1800px;}</style>
+#+HTML_HEAD: <style> #content{max-width:1000px;}</style>
 
 #+BEGIN_EXPORT html
 <!-- <script type="text/javascript" src="./collcont_clkbls.js"></script> -->
@@ -29,8 +29,12 @@ A good starting place for the new user to the Wave-Based Modeling (WBM) framewor
    Contains development scripts used for development of the quasi-periodic response routines & examples. 
 6. [[https://github.com/Nidish96/wavevib/tree/master/DEVEL_PER/][DEVEL\under{}PER]] [Obsolete]
    Contains development scripts used for development of the periodic response routines & examples.
-* COMMENT Programming Interface
-Coming soon...
+* Programming Interface
+The purpose of this section is to provide a description of the programming interface incorporated in the design of WaveVib. Fig. [[fig:swplan]] presents an overview of the software plan graphically.
+#+CAPTION: The WaveVib Software Plan
+#+NAME: fig:swplan
+#+ATTR_HTML: :width 800px
+[[./FIGS/rep1_SWPlan.png]]
 * [[https://github.com/Nidish96/wavevib/tree/master/EXAMPLES/][Examples]]
 ** Single Bar
 <<sec:a_singbar>>
@@ -663,7 +667,7 @@ Plot the response at the excitation location.
 [[./FIGS/d_out.png]]
 *** TODO Include a nicely labeled schematic of the considered system
 *** TODO Describe how to use [[https://github.com/Nidish96/wavevib/tree/master/ROUTINES/WBM/WVEVALWCOFS.m][WVEVALWCOFS]] for evaluating wave coefficients and plot deflection shape.
-** Impacting Cantilever Beams    
+** Impacting Cantilever Beams
 This is an example from [cite:@praveenkrishnaExperimentalNumericalInvestigations2012], where the dynamics of an impacting cantilever beam setup is investigated. The technical interest in this example is motivated from the broader are of vibro-impact dynamics[cite:@emaciNumericalExperimentalStudy1997], wherein the advantages of the wave based approach are expected to be particularly relevant (due to the avoidance of spatial discretization).
 
 A schematic of the setup is shown below in fig. [[fig:iclbeamsetup]] and the material properties used for this example are presented in tab. [[tab:matprops]].
