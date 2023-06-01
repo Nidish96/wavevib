@@ -38,7 +38,70 @@ The purpose of this section is to provide a description of the programming inter
 
 WaveVib is meant to serve as a toolbox that provides a few generic core routines that help define geometries, materials, joints, excitation, as well as other point-features. These routines are therefore written agnostic of the exact types of problems being dealt with. The following subsections are ordered in such a manner so as to aid usage by being read in order.
 ** Specification of a Library of Dispersion Relationships
+<<sec:spec_klib>>
+A linear component of a model is completely specified through its wave-dispersion relationship(s). The dispersion relationship describes the temporal behavior of spatial waves (as also the spatial behavior of temporal waves). A single component can have just one dispersion relationship (as in the case of a 1D bar), or it can have multiple dispersion relationships (Beams). Here are some examples of common dispersion relationships.
+#+begin_Details "Dispersion of 1D Bars" :background-color "#c9c9c9" :title-color black
+The equations of motion for a 1D bar (excluding boundary conditions) is specified as
+#+NAME: eq:1dbarex
+\begin{equation}
+\rho \frac{\partial^2 u}{\partial t^2} - E_y \frac{\partial^2 u}{\partial X^2} = 0 \qquad X\in (0, \ell).
+\end{equation}
+Using the standard ansatz \(u(X,t)=\frac{U}{2} e^{j(kX-\omega t)}+c.c.\), the continuum domain yields the dispersion relationship,
+#+NAME: eq:1dbardispex
+\begin{equation}
+k_{1,2}(\omega) = \pm \frac{\omega}{\sqrt{E_y/\rho}}.
+\end{equation}
+This represents two wave components $k_1$ and $k_2$, with $k_2=-k_1$. While the first wave component describes a forward moving wave, the second one describes a backward moving wave. The solution is therefore written at some point $X_A$ as,
+#+NAME: eq:1dbarwbsol
+\begin{equation}
+u(x,t) = \left(a^+ e^{jkx} + a^- e^{-jkx}\right) e^{-j\omega t} + c.c.,
+\end{equation}
+where $x$ is $X-X_A$, i.e., the position of some point $X$ relative to $X_A$. All wave descriptions are written in this form (relative coordinate $x$ and absolute coordinate $X$). 
+#+end_Details
+#+begin_Details "Dispersion of 1D Euler-Bernoulli Beams" :background-color white :title-color black
+The equations of motion for a 1D Euler-Bernoulli Beam (excluding boundary conditions) is specified as
+#+NAME: eq:1debbmex
+\begin{equation}
+\rho A \frac{\partial^2 u}{\partial t^2} + E_y I_y \frac{\partial^4 u}{\partial x^4} = 0 \qquad x\in (0, \ell).
+\end{equation}
+Here, $u(x,t)$ denotes the transverse displacement of the beam neutral axis at location $x$ and time $t$. Using the standard ansatz \(u(x,t)=\frac{U}{2} e^{j(kx-\omega t)}+c.c.\), the continuum domain yields the dispersion relationship,
+#+NAME: eq:1debbmdispex
+\begin{align}
+k_{1,2}(\omega) &= \pm {\left(\frac{\rho A}{E_y I_y}\right)}^{1/4} = \pm k,\,\text{and}\\
+k_{3,4}(\omega) &= \pm j {\left(\frac{\rho A}{E_y I_y}\right)}^{1/4} = \pm j k.
+\end{align}
+Unlike the case of the 1D Bar (eq. [[eq:1dbarex]]), the EB-Beam is described by four wave components out of which only two are real and the other two are imaginary. The fully real coefficients $k_{1,2}$ are interpreted as forward and backward traveling waves, just as in the case of the 1D Bar, but $k_{3,4}$ are non-traveling wave components and are referred to as _*evanescent waves*_ in the literature (see~[cite:@graffWaveMotionElastic2012], for instance). With the former denoted by $a^\pm$ and the latter by $b^\pm$, the wave based solution is expressed (using relative coordinates $x$) as
+#+NAME: eq:1debbmwbsol
+\begin{equation}
+u(x,t) = \left(a^+ e^{jkx} + a^- e^{-jkx} + b^+ e^{kx} + b^- e^{-kx} \right) e^{-i\omega t} + c.c..
+\end{equation}
+Note that the $\pm$ superscripts are used for the evanescent wave components also ($b^\pm$) just by convention and this does not indicate that they are propagating. 
+#+end_Details
+Through the examples,it is clear that a generic representation of the wave-based solution can be written as,
+#+NAME: eq:wbsolgen
+\begin{equation}
+u(x,t) = \left(\sum_{n=1}^{N} a_n e^{j k_n x}\right) e^{-i\omega t} + c.c. = \left(a_1 e^{jk_1x} + a_2 e^{jk_2x} + \dots \right) e^{-i\omega t} + c.c.,
+\end{equation}
+where the model has $N$ wave components, each with a wavenumber $k_n$ and associated dispersion relationship $k_n(\omega)$. This is the format that =wavevib= expects the user to specify the different dispersion relationships by. 
+
+The following is a code snippet that shows how a "dispersion library" is specified for a model that can potentially have a beam as well as a bar.
+#+begin_src octave
+  Klib = [struct('K', @(w,xi) sqrt(w)*(rho*Ar/Ey/Iy)^(0.25));
+				  struct('K', @(w,xi) w/sqrt(Ey/rho))];
+
+  wcomps_beam = [1  1;  % First component  -> exp(  k1 x )
+		-1  1;  % Second component -> exp( -k1 x )
+                 1j 1;  % Third component  -> exp( jk1 x )
+		-1j 1]; % Fourth component -> exp(-jk1 x )
+
+  wcomps_bar = [1j 2;   % First component  -> exp( jk2 x )
+	       -1j 2];  % Second component -> exp(-jk2 x )
+#+end_src
+The =Klibs= variable is first constructed as an array of structs containing the dispersion relationships as function handles. Next, an $N\times 2$ array =wcomps_beam= is created to specify how to use the dispersion relationships for each wave coefficient in the beam, and the same is done for the bar also (through =wcomps_bar=). The first column of these arrays stores the coefficient in front of $k$ and the second column stores which element of the =Klibs= vector to choose for the current wave component. For instance, if a row is =[1j, 2]=, it says that the corresponding wave component's contribution to the solution is of the form $a e^{jkx} e^{-j\omega t}$.
+
+Note that at this point the =wcomps_beam= and =wcomps_bar= arrays are merely arrays and no explicit relationship with =Klibs= has been specified. This will be done while specifying the different "Pieces" of the model, as covered in Sec. [[sec:spec_pcs]] below.
 ** Specification of the Pieces of a Model
+<<sec:spec_pcs>>
 ** Specification of Boundary Conditions
 ** Specification of Joints
 *** Fused Joints
