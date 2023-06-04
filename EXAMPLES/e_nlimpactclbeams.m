@@ -55,7 +55,7 @@ excs = struct('i', 2, 'nh', 1, ...
 %'nh' sets the harmonic at which to apply the excitation
 
 %% Setup AFT parameters
-h = (1:5)';
+h = (0)';
 Nt = 2^10;
 
 %% Setup Joints
@@ -92,6 +92,7 @@ Famps = [0.4 1.0 2.5];  % 0.336, 0.336
 acC = cell(size(Famps));
 for fi=1:length(Famps)
     [Amat, ~, ~, Fv, ~, ~, JEV] = WVAMAT([Wst;0], h, pcs, bcs, joints, Klib, 'r');
+    return;
     ari0 = Amat\Fv;
 
     Copt.Dscale = [1e-6*ones(size(ari0));Wst];
