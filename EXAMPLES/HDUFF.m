@@ -3,18 +3,20 @@ function [FNL, dFNLdU, dFNLdw] = HDUFF(Uw, kJs, cJs, gJs, h, Nt)
 %linear connections for given displacement coefficients. Force that is
 %returned is:
 %           kJs * us + cJs * uds + gJs * us.^3
+%	When us is a vector of multiple DOFs, the coefficients are
+% appropriately sized matrices.
 %
 %   USAGE: 
 %       [FNL, dFNLdU, dFNLdw] = HDUFF(Uw, kJ, cJ, gJ, h, Nt);
 %   INPUTS:
-%       Uw      : (Nd*Nhc+1,1)
-%       kJ,cJ,gJ: (Nd,Nd)
-%       h       : (Nh,1)
-%       Nt      : (int)
+%       Uw      : (Nd*Nhc+1,1) [Harmonics of DOFs; frequency]
+%       kJ,cJ,gJ: (Nd,Nd) Stiffness, damping and cubic stiffness matrices
+%       h       : (Nh,1) List of harmonics to balance
+%       Nt      : (int) AFT samples
 %   OUTPUTS:
-%       FNL     : (Nd*Nhc,1)
-%       dFNLdU  : (Nd*Nhc,Nd*Nhc)
-%       dFNLdw  : (Nd*Nhc,1)
+%       FNL     : (Nd*Nhc,1) Nonlinear force harmonics
+%       dFNLdU  : (Nd*Nhc,Nd*Nhc) Nonlinear force harmonic jacobian
+%       dFNLdw  : (Nd*Nhc,1) Jacobian wrt frequency
     
     Nhc = sum((h==0)+2*(h~=0));
     D1 = kron(diag(h),[0 1;-1 0])*Uw(end);  % Fourier Differentiation mx
@@ -59,7 +61,7 @@ function [FNL, dFNLdU, dFNLdw] = HDUFF(Uw, kJs, cJs, gJs, h, Nt)
         dFNLdw(di:Nd:end) = AFT(sum(reshape(dfdud(:, di), Nd, Nt)'.*udt/Uw(end),2), h, Nt, 't2f');
     end
 
-%     % Simple Version
+%     % Simple (SDOF) Version
 %     ut = AFT(Uw(1:end-1), Nt, h, 'f2t');
 %     udt = AFT(D1*Uw(1:end-1), Nt, h, 'f2t');
 % 

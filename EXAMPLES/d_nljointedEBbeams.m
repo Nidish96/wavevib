@@ -30,10 +30,8 @@ pcs = [struct('coords', [0;L0/3;L0], 'wcomps', wcomps);
     struct('coords', [L0;2*L0], 'wcomps', wcomps)];
 
 % Setup Boundary Conditions. Fix-Fix used here.
-bcs = [struct('i', 1, 'cofs', @(w,xi) [1 1 1 1]);
-    struct('i', 1, 'cofs', @(w,xi) [1 -1 1j -1j]);
-    struct('i', 5, 'cofs', @(w,xi) [1 1 1 1]);
-    struct('i', 5, 'cofs', @(w,xi) [1 -1 1j -1j])];
+bcs = [struct('i', 1, 'cofs', @(w,xi) [1 1 1 1; 1 -1 1j -1j]);
+    struct('i', 5, 'cofs', @(w,xi) [1 1 1 1; 1 -1 1j -1j])];
 
 %% Setup Excitation
 Mx = @(w,xi) inv([Ey*Iy*Klib.K(w,xi)^3*[-1 1 1j -1j];
@@ -52,14 +50,14 @@ Nt = 128;
 kJs = diag([1e9 1e9]);
 cJs = diag([320 320]);
 gJs = diag([1e8 0]);
-cofs = @(w,xi) [-Klib.K(w,xi)^3*[1 -1 -1j 1j 0 0 0 0];
-    -Klib.K(w,xi)^2*[1 1 -1 -1 0 0 0 0];
-    -Klib.K(w,xi)^3*[1 -1 -1j 1j -1 1 1j -1j];
-    -Klib.K(w,xi)^2*[1 1 -1 -1 -1 -1 1 1]];
+cofs = @(w,xi) [-Klib.K(w,xi)*[1 -1 -1j 1j 0 0 0 0];
+    -[1 1 -1 -1 0 0 0 0];
+    -Klib.K(w,xi)*[1 -1 -1j 1j -1 1 1j -1j];
+    -[1 1 -1 -1 -1 -1 1 1]];
 joints = struct('type', 2, 'i', 3, 'j', 4, 'cofs', cofs, ...
     'nl', @(Uw) HDUFF(Uw, kJs, cJs, gJs, h, Nt), ...
     'nldcofs', @(w,xi) [1 1 1 1 -1 -1 -1 -1; Klib.K(w,xi)*[1 -1 1j -1j -1 1 -1j 1j]], ...
-    'nlfcofs', @(w,xi) [eye(2);zeros(2)]/(Ey*Iy));
+    'nlfcofs', @(w,xi) [eye(2);zeros(2)]/(Ey*Iy*Klib.K(w,xi)^2));
 %NOTE: This is a joint that engages both the transverse displacement as
 %well as rotation such that,
 %       fnl = kJs [u;th] + cJs [udot;thdot] + gJs [u^3;th^3];

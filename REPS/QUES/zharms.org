@@ -1,0 +1,39 @@
+#+TITLE: Balancing zero harmonics in the Wave-Based Formalism
+#+OPTIONS: toc:nil
+
+
+I will take the example of the Euler Bernoulli Beam whose dispersion relationship is given by
+#+NAME: eq:ebdisp
+\begin{equation}
+k = {\left( \frac{\rho A_r}{E_y I_y} w^2 \right)}^{1/4}.
+\end{equation}
+The solution is expanded through the wave-based formalism as,
+#+NAME: eq:sol
+\begin{equation}
+u(x,t) = (a_1^+ e^{kx} + a_1^- e^{-kx} + a_2^+ e^{ikx} + a_2^- e^{-ikx}) e^{-i\omega t} + c.c.,
+\end{equation}
+where $a_1^{\pm}$ and $a_2^{\pm}$ are the evanescent and traveling wave components respectively. 
+
+Considering a joint between two points, say $A$ and $B$, with relative displacement denoted by $\delta u(x,t)\rvert_{x=x_J}$, the joint force balance equation can be written as,
+#+NAME: eq:jfbal
+\begin{equation}
+V(x,t)\rvert_{x=x_J} = -E_y I_y \frac{\partial^3 u}{\partial x^3} = f_{joint} (\delta u ),
+\end{equation}
+where $f_{joint}(\cdot)$ is the joint constitutive model, $E_yI_y$ is the flexural rigidity, and $V(x,t)\rvert_{x=x_J}$ is the shear force at the joint.
+
+Substituting the wave-based solution ansatz from eq. [[eq:sol]] into eq. [[eq:jfbal]] yields,
+#+NAME: eq:jfbalsubst
+\begin{equation}
+-E_y I_y k(\omega)^3 \begin{bmatrix} 1 & -1 & -i & i & 0 & 0 & 0 & 0\\
+1 & -1 & -i & i & -1 & 1 & i & -i \end{bmatrix}
+\begin{bmatrix} a_1^+\\ a_1^-\\ a_2^+\\ a_2^-\\ b_1^+\\ b_1^-\\ b_2^+\\ b_2^- \end{bmatrix} =
+\begin{bmatrix} f_{joint}(\delta u)\\ 0 \end{bmatrix}.
+\end{equation}
+In the above vector equation, the first row equation represents the force balance from eq. [[eq:jfbal]] and the second row equation represents the fact that the interface force is identical across the joints.
+
+#+html: <br>
+#+begin_box Question
+When $\omega$ is set to zero, $k(\omega)=0$ (see eq. [[eq:ebdisp]]). As a consequence, eq. [[eq:jfbalsubst]] represents a null expression (matrix in lhs multiplied by zero). In other words, this *requires* the static component of the joint force to be zero. Does this make sense or is something wrong? *What if I have a joint that provides a static force? How can I represent this in this formalism?*
+
+This also leads to the more general question of *can the wave based approach accommodate constant terms in the PDE?*
+#+end_box

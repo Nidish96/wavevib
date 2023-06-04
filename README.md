@@ -16,6 +16,7 @@ BUGFIXES TODO:
 1. Multiharmonic excitation at single point has to be implemented
 2. Allow for simple handling of constant coefficient matrices (not functions of @(w,xi)).
 3. Find a way to properly handle the zero harmonics of boundary conditions.
+4. Fix the reduced representations (WVAMATr, WVHBRESFUNr)
 
 TODO (in no particular order): 
 1. 3D frame joint constitutions
