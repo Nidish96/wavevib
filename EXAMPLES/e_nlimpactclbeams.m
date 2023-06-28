@@ -12,7 +12,7 @@ set(0,'defaultAxesFontSize',13)
 %similar to the jointed bar example. Parameters taken from 
 % Krishna and Chandramouli, 2012
 
-savfig = true;
+savfig = false;
 %% Setup Model
 Ey = 2.1e11;
 rho = 7680;
@@ -60,7 +60,7 @@ excs = struct('i', 2, 'nh', 1, ...
 %'nh' sets the harmonic at which to apply the excitation
 
 %% Setup AFT parameters
-h = (1:5)';
+h = (1)';
 Nt = 2^10;
 
 %% Setup Joints
@@ -88,7 +88,7 @@ Wen = 2*pi*12;
 dw = 0.75;
 
 Copt = struct('Nmax', 600, 'angopt', 5e-2, 'DynDscale', 1);
-Famps = [0.4 1.0 2.5];  % 0.336, 0.336
+Famps = [0.4 1.0 2.5 5];  % 0.336, 0.336
 acC = cell(size(Famps));
 for fi=1:length(Famps)
     [Amat, ~, ~, Fv, ~, ~, JEV] = WVAMAT([Wst;0], h, pcs, bcs, joints, Klib, 'r');
@@ -105,7 +105,8 @@ for fi=1:length(Famps)
 end
 
 %% Plot Results
-opi = (13:16); % Response -> tip displacement of primary beam
+opi = (13:16);  % Point x1 in paper
+% opi = (17:20);  % Point x2 in paper
 hi = find(h==1);  % Choose which harmonic to plot
 figure(1)
 set(gcf, 'Color', 'white')
