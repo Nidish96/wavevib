@@ -24,7 +24,7 @@ function [R, dRdU, dRdw, FNL] = HBRESFUN(m, Uw, Fl, h, Nt, tol, varargin)
   
   t = linspace(0, 2*pi, Nt+1)'; t(end) = [];
   cst = TIMESERIES_DERIV(Nt, h, eye(Nhc), 0);  
-  sct = w*TIMESERIES_DERIV(Nt, h, eye(Nhc), 1);
+  sct = full(w*TIMESERIES_DERIV(Nt, h, eye(Nhc), 1));
   
   FNL = zeros(m.Ndofs*Nhc, 1);
   dFNL = zeros(m.Ndofs*Nhc);

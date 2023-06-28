@@ -105,7 +105,7 @@ for fi=1:length(Famps)
 end
 
 %% Plot Results
-opi = (13:16);
+opi = (13:16); % Response -> tip displacement of primary beam
 hi = find(h==1);  % Choose which harmonic to plot
 figure(1)
 set(gcf, 'Color', 'white')
@@ -153,6 +153,16 @@ sl = uicontrol('Style', 'slider', 'Position', [85 425 425 15], ...
     'String', 'Point', 'Value', 1, 'Min', 1, 'max', size(acC{fip},2), ...
     'SliderStep', 1/size(acC{fip},2)*[1 1], ...
     'Callback', @(es,ed) cbk(fip,fix(es.Value),Famps,acC,Npts,opi,sort([Wst Wen]/2/pi),pcs,Klib,h));
+
+figure(3)
+for i=1:size(acC{fip},2)
+    clf()
+    cbk(fip, i,Famps,acC,Npts,opi,sort([Wst Wen]/2/pi),pcs,Klib,h);
+
+    if savfig
+        print(sprintf('./FIGS/E_anim/E_out_%d.png',i),'-dpng','-r300');
+    end
+end
 
 function [] = cbk(fip,wip,Famps,acC,Npts,opi,Wrng,pcs,Klib,h)
     ac = reshape(acC{fip}(1:end-1, wip), Npts*4, []);

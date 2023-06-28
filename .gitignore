@@ -12,3 +12,5 @@
 *.bbl
 *~
 /docs/ltximg/
+/EXAMPLES/FIGS/E_anim/
+*fig
