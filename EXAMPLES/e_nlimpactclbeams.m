@@ -142,7 +142,7 @@ end
 
 %% Plot deflection shape
 fip = 3;
-wip = 180;
+wip = 1;
 
 ac = acC{fip}(1:Npts*4, wip);
 w = acC{fip}(end, wip);

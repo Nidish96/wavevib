@@ -182,7 +182,9 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
     % 4. Preprocess Excitation Information (and put into pcs)
     rlist = {'drcofsdw', 'drcofsdxi'};
     for n=1:length(excs)
-        mi = find(all(proccoords==origcoords(excs(n).i,:),2));
+%         mi = find(all(proccoords==origcoords(excs(n).i,:),2));  % Doesn't
+%         work due to roundoff in certain versions
+        mi = find(sum(abs(proccoords-origcoords(excs(n).i,:)),2)<1e-13);
         if length(mi)~=2
             error('Multiplicity of excitation point: %d. Unknown case.', length(mi));
         end
