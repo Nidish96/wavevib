@@ -15,7 +15,8 @@ set(0,'defaultAxesFontSize',13)
 %similar to the jointed bar example. Parameters taken from 
 % Krishna and Chandramouli, 2012
 
-savfig = true;
+savfig = false;
+
 %% Setup Model
 Ey = 2.1e11;
 rho = 7680;
@@ -30,7 +31,7 @@ L2 = 445e-3;  % Secondary beam length (each)
 al = 0.80;    % 0.80, 1.80
 bt = 1.1e-4;  % 1.1e-4, 2.475e-4
 % Joint parameters
-knl = 220/2;      % 220,      880,    (242, 484, 880, 1210)
+knl = 220/2;    % 220,      880,    (242, 484, 880, 1210)
 gap = 2.5e-3;   % 2.5e-3,   0.35,   0.35
 
 Nn1 = 10;
