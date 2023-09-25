@@ -18,7 +18,7 @@ set(0,'defaultAxesFontSize',13)
 savfig = false;
 animfig = false;
 savdat = true;
-analyze = true;
+analyze = false;
 %% Setup Model
 Ey = 2.1e11;
 rho = 7680;
@@ -112,6 +112,7 @@ Copt = struct('Nmax', 2000, 'angopt', 5e-2, 'DynDscale', 1);
 % Copt = struct('Nmax', 2000, 'angopt', 5e-2, 'DynDscale', 1, 'solverchoice', 3);
 Famps = [0.4 1.0 2.5 5];  % 0.336, 0.336
 acC = cell(size(Famps));
+pds = cell(size(Famps));
 if analyze
     for fi=1:length(Famps)
         [Amat, dAmatdw, ~, Fv, ~, ~, JEV] = WVAMAT([Wst;0], h, pcs, bcs, joints, Klib, 'r');
@@ -133,11 +134,23 @@ if analyze
         % Convert to complex representation
         acC{fi} = zeros(Npts*Nwc*Nh+1, size(ariwC,2));
         acC{fi}([zinds hinds end], :) = [ariwC(rinds0,:); ariwC(rinds,:)+1j*ariwC(iinds,:);ariwC(end,:)];
+
+        % Stability Estimation with PER
+        pds{fi} = zeros(size(acC{fi},2), 1);
+        fprintf('PER Determinant Estimation==================================\n');
+        for wi=1:size(ariwC,2)
+            W = ariwC(end, wi);
+            
+            pAmat = WBPERJACFUN(W, ariwC(:, wi), Famps(fi), h, pcs, bcs, joints, Klib);
+            pds{fi}(wi) = det(pAmat);
+            fprintf('%d/%d\n', wi, size(acC{fi},2))
+        end
+        fprintf('PER Determinant Estimation Done=============================\n');
     end
 
     if savdat
         save(sprintf('./DATS/E_NLIMPDAT_2Knl%d_H%d.mat', knl,Nh), ...
-             'acC', 'h', 'Famps', 'Klib', 'wcomps', ...
+             'acC', 'pds', 'h', 'Famps', 'Klib', 'wcomps', ...
              'pcs', 'bcs', 'joints', 'excs', ...
              'knl', 'gap', ...
              'Wst', 'Wen');
@@ -145,7 +158,7 @@ if analyze
     Nf = length(Famps);
 else
     load(sprintf('./DATS/E_NLIMPDAT_2Knl%d_H%d.mat', knl,Nh), ...
-         'acC', 'h', 'Famps', 'Klib', 'wcomps', ...
+         'acC', 'pds', 'h', 'Famps', 'Klib', 'wcomps', ...
          'pcs', 'bcs', 'joints', 'excs', ...
          'knl', 'gap', 'Wst', 'Wen')
     Npts = pcs(end).irange(end);
@@ -153,11 +166,36 @@ else
     Nf = length(Famps);
 end
 
+% %% Estimate Stability Using Determinant
+% ari = zeros(Npts*Nwc*Nhc,1);
+% pds = cell(Nf,1);
+
+% for fi=1:Nf
+%     fprintf('PER Determinant Estimation\n');
+%     pds{fi} = zeros(size(acC{fi},2), 1);
+%     for wi=1:size(acC{fi},2)
+%         ari([rinds0 rinds iinds]) = [acC{fi}(zinds, wi); ...
+%                                      real(acC{fi}(hinds, wi)); ...
+%                                      imag(acC{fi}(hinds, wi))];
+
+%         W = acC{fi}(end, wi);
+        
+%         pAmat = WBPERJACFUN(W, [ari; W], Famps(fi), h, pcs, bcs, joints, Klib);
+%         pds{fi}(wi) = det(pAmat);
+%         fprintf('%d/%d\n', wi, size(acC{fi},2))
+%     end
+% end
+
 %% Plot Results
+stabis = cellfun(@(pp) sign(conv(sign(pp(:)')==sign(pp(1)), [1 1], 'same')), ...
+                 pds, 'Uniformoutput', false);  % stability. conv added as visual aid.
+
 opi = (13:16);  % Point x1 in paper
                 % opi = (17:20);  % Point x2 in paper
                 % opi = (25:28);  % Point x3 in paper
 hi = find(h==1);  % Choose which harmonic to plot
+
+colos = DISTINGUISHABLE_COLORS(Nf);
 
 figure(1)
 set(gcf, 'Color', 'white')
@@ -165,14 +203,22 @@ clf()
 aa = gobjects(size(Famps));
 for fi=1:length(Famps)
     subplot(2,1,1)
-    aa(fi)=plot(acC{fi}(end,:)/2/pi, abs(sum(2*acC{fi}((hi-1)*Npts*4+opi,:)))*1e3, ...
-                '-', 'LineWidth', 1.5); hold on
+    aa(fi)=plot(acC{fi}(end,:)./stabis{fi}/2/pi, ...
+                abs(sum(2*acC{fi}((hi-1)*Npts*4+opi,:)))*1e3, ...
+                '-', 'LineWidth', 1.5, 'Color', colos(fi,:)); hold on
+    plot(acC{fi}(end,:)./(1-stabis{fi})/2/pi, ...
+         abs(sum(2*acC{fi}((hi-1)*Npts*4+opi,:)))*1e3, ...
+         '--', 'LineWidth', 1.5, 'Color', colos(fi,:))
     legend(aa(fi), sprintf('F = %.1f N', Famps(fi)));
     grid on
     ylabel(sprintf('H%d Response (mm)', h(hi)))
     subplot(2,1,2)
-    plot(acC{fi}(end,:)/2/pi, rad2deg(angle(sum(2*acC{fi}((hi-1)*Npts*4+opi,:)))), ...
-         '-', 'LineWidth', 1.5); hold on
+    plot(acC{fi}(end,:)./stabis{fi}/2/pi, ...
+         rad2deg(angle(sum(2*acC{fi}((hi-1)*Npts*4+opi,:)))), ...
+         '-', 'LineWidth', 1.5, 'Color', colos(fi,:)); hold on
+    plot(acC{fi}(end,:)./(1-stabis{fi})/2/pi, ...
+         rad2deg(angle(sum(2*acC{fi}((hi-1)*Npts*4+opi,:)))), ...
+         '--', 'LineWidth', 1.5, 'Color', colos(fi,:))
     grid on
     ylabel('Phase (degs)')
 end
@@ -241,6 +287,7 @@ xlim([Wst Wen]/2/pi)
 grid on
 ylabel('RMS')
 title('Interference Response (mm)')
+
 hord = reshape(reshape(0:Nh, 6,3)', [],1);
 [~, hord] = sort(hord);
 for hi=1:Nh

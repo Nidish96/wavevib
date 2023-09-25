@@ -52,6 +52,9 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
         if ~isfield(pcs(i), 'exccofs') || ~iscell(pcs(i).exccofs)
             pcs(i).exccofs = {};
         end
+        if ~isfield(pcs(i), 'exccofs0') || ~iscell(pcs(i).exccofs0)
+            pcs(i).exccofs0 = {};
+        end
 
         pcs(i).N = size(pcs(i).coords,1);  % Number of Elements
         pcs(i).L = vecnorm(diff(pcs(i).coords([1 end],:)));
@@ -93,6 +96,23 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
                 bcs(n).drhsdxi = matlabFunction(diff(bcs(n).rhs(w,xi), xi), 'Vars', [w xi]);
             end
         end
+        
+        % Zeroth coefficients
+        if ~isfield(bcs(n), 'cofs0') || isempty(bcs(n).cofs0)
+            bcs(n).cofs0 = matlabFunction(bcs(n).cofs(0, xi), 'Vars', xi);  % Default behavior
+        end
+        if ~isfield(bcs(n), 'dcofsdxi0') || isempty(bcs(n).dcofsdxi0)
+            bcs(n).dcofsdxi0 = matlabFunction(diff(bcs(n).cofs0(xi), xi), 'Vars', xi);
+        end
+        assert(size(bcs(n).cofs(w,xi),1) == size(bcs(n).cofs0(xi),1))
+        if ~isfield(bcs(n), 'rhs0') || isempty(bcs(n).rhs0)
+            bcs(n).rhs0 = @(xi) 0;
+            bcs(n).drhsdxi0 = @(xi) 0;
+        else
+            if ~isfield(bcs(n), 'drhsdxi0') || isempty(bcs(n).drhsdxi0)
+                bcs(n).drhsdxi0 = matlabFunction(diff(bcs(n).rhs0(xi), xi), 'Vars', xi);
+            end
+        end
 
         % Account for new nodes included in model
         mi = find(all(proccoords==origcoords(bcs(n).i,:), 2));
@@ -104,10 +124,10 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
     for n=1:length(joints)
         if ~isfield(joints(n), 'cofs') || isempty(joints(n).cofs)
             switch joints(n).type
-                case {1, 2}
-                    joints(n).cofs = @(w,xi) [eye(Nwc) -eye(Nwc)];
-                otherwise
-                    joints(n).cofs = @(w,xi) [eye(Nwc)/joints(n).type -repmat(eye(Nwc), 1,joints(n).type-1)];
+              case {1, 2}
+                joints(n).cofs = @(w,xi) [eye(Nwc) -eye(Nwc)];
+              otherwise
+                joints(n).cofs = @(w,xi) [eye(Nwc)/joints(n).type -repmat(eye(Nwc), 1,joints(n).type-1)];
             end
         end
         if ~isfield(joints(n), 'dcofsdw') || isempty(joints(n).dcofsdw)
@@ -133,6 +153,24 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
                 joints(n).drhsdxi = matlabFunction(diff(joints(n).rhs(w,xi), xi), 'Vars', [w xi]);
             end
         end
+        %% Zeroth Harmonics
+        if ~isfield(joints(n), 'cofs0') || isempty(joints(n).cofs0)
+            joints(n).cofs0 = matlabFunction(joints(n).cofs(0,xi), 'Vars', xi);
+        end
+        if ~isfield(joints(n), 'dcofsdxi0') || isempty(joints(n).dcofsdxi0)
+            joints(n).dcofsdxi0 = matlabFunction(diff(joints(n).cofs0(xi), xi), 'Vars', xi);
+        end
+        assert(size(joints(n).cofs(w,xi),1) == size(joints(n).cofs0(xi),1));
+
+        if ~isfield(joints(n), 'rhs0') || isempty(joints(n).rhs0)
+            joints(n).rhs0 = @(xi) zeros(Nwc,1);
+            joints(n).drhsdxi0 = @(xi) zeros(Nwc,1);
+        else
+            if ~isfield(joints(n), 'drhsdxi0') || isempty(joints(n).drhsdxi0)
+                joints(n).drhsdxi0 = matlabFunction(diff(joints(n).rhs0(xi), xi), 'Vars', xi);
+            end
+        end
+        %% Nonlinear Joint
         if ~isfield(joints(n), 'nl') || isempty(joints(n).nl)
             joints(n).nl = [];
         else
@@ -142,7 +180,7 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
             if ~isfield(joints(n), 'dnlfcofsdxi') || isempty(joints(n).dnlfcofsdxi)
                 joints(n).dnlfcofsdxi = matlabFunction(diff(joints(n).nlfcofs(w,xi), xi), 'Vars', [w xi]);
             end
-    
+            
             if ~isfield(joints(n), 'dnldcofsdw') || isempty(joints(n).dnldcofsdw)
                 joints(n).dnldcofsdw = matlabFunction(diff(joints(n).nldcofs(w,xi), w), 'Vars', [w xi]);
             end
@@ -151,39 +189,57 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
             end
 
             joints(n).nld = size(joints(n).nldcofs(0,0), 1);
-        end
 
-        % Account for new nodes included in model
+            % Zeroth Harmonic
+            if ~isfield(joints(n), 'nlfcofs0') || isempty(joints(n).nlfcofs0)
+                joints(n).nlfcofs0 = matlabFunction(joints(n).nlfcofs(0, xi), 'Vars', xi);
+            end
+            if ~isfield(joints(n), 'dnlfcofsdxi0') || isempty(joints(n).dnlfcofsdxi0)
+                joints(n).dnlfcofsdxi0 = matlabFunction(diff(joints(n).nlfcofs0(xi), xi), ...
+                                                        'Vars', xi);
+            end
+            if ~isfield(joints(n), 'nldcofs0') || isempty(joints(n).nldcofs0)
+                joints(n).nldcofs0 = matlabFunction(joints(n).nldcofs(0, xi), 'Vars', xi);
+            end
+            if ~isfield(joints(n), 'dnldcofsdxi0') || isempty(joints(n).dnldcofsdxi0)
+                joints(n).dnldcofsdxi0 = matlabFunction(diff(joints(n).nldcofs0(xi), xi), ...
+                                                        'Vars', xi);
+            end
+
+            assert(size(joints(n).nldcofs(0,0), 1) == size(joints(n).nldcofs0(0), 1));
+        end        
+
+        %% Account for new nodes included in model
         switch joints(n).type
-            case {1, 2}
-                mi = find(all(proccoords==origcoords(joints(n).i,:), 2));
-                mj = find(all(proccoords==origcoords(joints(n).j,:), 2));
+          case {1, 2}
+            mi = find(all(proccoords==origcoords(joints(n).i,:), 2));
+            mj = find(all(proccoords==origcoords(joints(n).j,:), 2));
 
-                joints(n).i = mi(1);
-                mj = setdiff(mj, mi(1));
-                joints(n).j = mj(1);
+            joints(n).i = mi(1);
+            mj = setdiff(mj, mi(1));
+            joints(n).j = mj(1);
 
-                joints(n).pi = find(arrayfun(@(p) prod(joints(n).i-p.irange)<=0, pcs));
-                joints(n).pj = find(arrayfun(@(p) prod(joints(n).j-p.irange)<=0, pcs));
-            otherwise
-                ms = cell(joints(n).type,1);
-                joints(n).ps = zeros(1,joints(n).type);
-                for ii=1:joints(n).type
-                    ms{ii} = find(all(proccoords==origcoords(joints(n).is(ii),:), 2));
-                    if ii>1
-                        ms{ii} = setdiff(ms{ii}, ms{ii-1});
-                    end
-                    joints(n).is(ii) = ms{ii}(1);
-                    joints(n).ps(ii) = find(arrayfun(@(p) prod(joints(n).is(ii)-p.irange)<=0, pcs));
+            joints(n).pi = find(arrayfun(@(p) prod(joints(n).i-p.irange)<=0, pcs));
+            joints(n).pj = find(arrayfun(@(p) prod(joints(n).j-p.irange)<=0, pcs));
+          otherwise
+            ms = cell(joints(n).type,1);
+            joints(n).ps = zeros(1,joints(n).type);
+            for ii=1:joints(n).type
+                ms{ii} = find(all(proccoords==origcoords(joints(n).is(ii),:), 2));
+                if ii>1
+                    ms{ii} = setdiff(ms{ii}, ms{ii-1});
                 end
+                joints(n).is(ii) = ms{ii}(1);
+                joints(n).ps(ii) = find(arrayfun(@(p) prod(joints(n).is(ii)-p.irange)<=0, pcs));
+            end
         end
     end
-
+    
     % 4. Preprocess Excitation Information (and put into pcs)
     rlist = {'drcofsdw', 'drcofsdxi'};
     for n=1:length(excs)
-%         mi = find(all(proccoords==origcoords(excs(n).i,:),2));  % Doesn't
-%         work due to roundoff in certain versions
+        %         mi = find(all(proccoords==origcoords(excs(n).i,:),2));  % Doesn't
+        %         work due to roundoff in certain versions
         mi = find(sum(abs(proccoords-origcoords(excs(n).i,:)),2)<1e-13);
         if length(mi)~=2
             error('Multiplicity of excitation point: %d. Unknown case.', length(mi));
@@ -193,6 +249,13 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
         end
         if ~isfield(excs(n), 'drcofsdxi') || isempty(excs(n).drcofsdxi)
             excs(n).drcofsdxi = matlabFunction(diff(excs(n).rcofs(w,xi), xi), 'Vars', [w xi]);
+        end
+        % static forcing
+        if ~isfield(excs(n), 'rcofs0') || isempty(excs(n).rcofs0)
+            excs(n).rcofs0 = matlabFunction(excs(n).rcofs(0, xi), 'Vars', xi);  % Default behavior
+        end
+        if ~isfield(excs(n), 'drcofsdxi0') || isempty(excs(n).drcofsdxi0)
+            excs(n).drcofsdxi0 = matlabFunction(diff(excs(n).rcofs0(xi), xi), 'Vars', xi);
         end
 
         if ~isfield(excs(n), 'nh') || isempty(excs(n).nh)
@@ -208,6 +271,8 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
         pcs(pi).exci = [pcs(pi).exci; excs(n).i-pcs(pi).irange(1)+1];
         pcs(pi).excnh = [pcs(pi).excnh; excs(n).nh];
         pcs(pi).exccofs = {pcs(pi).exccofs{:}; 
-            {excs(n).rcofs, excs(n).drcofsdw, excs(n).drcofsdxi}};
+                           {excs(n).rcofs, excs(n).drcofsdw, excs(n).drcofsdxi}};
+        pcs(pi).exccofs0 = {pcs(pi).exccofs0{:}; 
+                            {excs(n).rcofs0, excs(n).drcofsdxi0}};
     end
 end

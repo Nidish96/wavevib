@@ -15,8 +15,9 @@ set(0,'defaultAxesFontSize',13)
 %similar to the jointed bar example. Parameters taken from 
 % Krishna and Chandramouli, 2012
 
+animfig = true;
 savfig = false;
-savdat = false;
+savdat = true;
 analyze = false;
 
 %% Setup Model
@@ -102,7 +103,7 @@ MDL = MDOFGEN(Mb,Kb,Cb,Lb);
 MDL = MDL.SETNLFUN(1+3, Lnls, nlfunc);
 
 %%
-h = (0:5)';
+h = (0:16)';
 Nt = 1024;
 Nhc = sum((h==0)+2*(h~=0));
 [~,~,zinds,rinds,iinds] = HINDS(1,h);
@@ -118,7 +119,7 @@ Wen = 2*pi*12;
 dw  = 0.75;
 
 Copt = struct('Nmax', 5000, 'angopt', 1e-2, 'DynDscale', 1, ...
-    'Dscale', [1e-6*ones(MDL.Ndofs*Nhc,1);Wst]);
+    'Dscale', [1e-5*ones(MDL.Ndofs*Nhc,1);Wst]);
 
 if analyze
     UCs = cell(size(Famps));
@@ -176,15 +177,17 @@ end
 
 %% Higher Harmonics Figure
 Nh = max(h);
+% Rout = Rb;
+Rout = Lnls(1, :);
 
 figure(10)
 pos = get(gcf, 'Position');
-set(gcf, 'Color', 'white', 'Position', [pos(1:2) 480 720])
+set(gcf, 'Color', 'white')
 clf()
 aa = gobjects(size(Famps));
-subplot(1+Nh,1,1)
+subplot(6, 3, 1)
 for fi=1:length(Famps)
-    Uh = kron(eye(Nhc), Rb)*UCs{fi}(1:end-1,:)*1e3;
+    Uh = kron(eye(Nhc), Rout)*UCs{fi}(1:end-1,:)*1e3;
 
     aa(fi) = plot(UCs{fi}(end,:)/2/pi, sum(abs(Uh))/sqrt(2), ...
                   '-', 'LineWidth', 2); hold on
@@ -196,13 +199,21 @@ xlim([Wst Wen]/2/pi)
 grid on
 ylabel('RMS')
 title('Interference Response (mm)')
-for hi=h(h~=0)'
-    subplot(1+Nh,1,1+hi)
-    for fi=1:length(Famps)
-        % Uh = kron(eye(Nhc), Rb)*UCs{fi}(1:end-1,:)*1e3;
-        Uh = kron(eye(Nhc), Lnls(1,:))*UCs{fi}(1:end-1,:)*1e3;
 
-        plot(UCs{fi}(end,:)/2/pi, abs([1 1j]*Uh(1+(hi-1)*2+(1:2), :)), ...
+hord = reshape(reshape(0:length(h), 6,3)', [],1);
+[~, hord] = sort(hord);
+for hi=1:length(h)
+    subplot(6,3, hord(1+hi))
+    for fi=1:length(Famps)
+        Uh = kron(eye(Nhc), Rout)*UCs{fi}(1:end-1,:)*1e3;
+
+        inds = 1+(h(hi)-1)*2+(1:2);
+        inds = inds(inds>0);
+        wv = [1 1j];
+        if h(hi)==0
+            wv = 1;
+        end
+        plot(UCs{fi}(end,:)/2/pi, abs(wv*Uh(inds, :)), ...
              '-', 'LineWidth', 2); hold on
     end
     if hi==1
@@ -210,7 +221,7 @@ for hi=h(h~=0)'
     end
 
     xlim([Wst Wen]/2/pi)
-    ylabel(sprintf('H%d', hi))
+    ylabel(sprintf('H%d', h(hi)))
     if hi~=Nh
         set(gca, 'XTickLabel', [])
     end
@@ -222,3 +233,93 @@ if savfig
 
     savefig('./FIGS/E_fefig_harms.fig')
 end
+
+%% Time domain @ peak
+t = linspace(0, 2*pi, Nt+1)'; t=t(1:end-1);
+fi = 2;
+
+ns = ([Nn1 Nn1+1 Nn1+Nn2+1]-1)*2+1;
+uouts = cell(size(ns));
+for i=1:length(ns)
+    uouts{i} = AFT(kron(eye(Nhc), Lb(ns(i), :))*UCs{fi}(1:end-1,:), h,Nt, 'f2t');
+    if i>1
+        uouts{i} = uouts{i} + (-1)^(i)*gap;
+    end
+end
+[~, mi] = max(max(abs(uouts{1})));
+% [~, mi] = min(abs(UCs{fi}(end,:)/2/pi-10));
+mi = mi;
+
+figure(100)
+clf()
+subplot(2,1,1)
+plot(UCs{fi}(end,:)/2/pi, max(abs(uouts{1}))*1e3, ...
+     'LineWidth', 2); hold on
+plot(UCs{fi}(end,mi)/2/pi, max(abs(uouts{1}(:,mi)))*1e3, 'ko', ...
+     'MarkerFaceColor', 'k')
+grid on
+xlabel('Frequency (Hz)')
+ylabel('Peak Amplitude (mm)')
+subplot(2,1,2)
+for i=1:length(ns)
+    plot(t, uouts{i}(:, mi), 'LineWidth', 2); hold on
+end
+plot(xlim, gap*[1 1], 'k--'); hold on
+plot(xlim, -gap*[1 1], 'k--'); hold on
+grid on
+xlabel('Scaled Time')
+ylabel('Response')
+drawnow
+
+%% Animate Deflection
+sc = 1;
+U = UCs{fi}(1:end-1, mi);
+% U(MDL.Ndofs+(1:4*MDL.Ndofs)) = 0;  % Removing the first harmonic
+% sc = 4;
+U = Lb(1:2:end,:)*AFT(reshape(U, MDL.Ndofs, Nhc)', h,Nt, 'f2t')';
+if animfig
+    figure(101);
+    clf()
+    ncyc = 1;
+    for ti=repmat(1:16:Nt, 1,ncyc)
+        clf()
+        subplot(2,1,1)
+        plot(Xn1(:,1), Xn1(:,2), 'k--'); hold on
+        plot(Xn2(:,1), Xn2(:,2), 'k--');
+        plot(Xn3(:,1), Xn3(:,2), 'k--');
+        
+        plot(Xn1(:,1), Xn1(:,2)+sc*U(1:Nn1,ti), 'o-', 'LineWidth', 2, 'MarkerFaceColor', 'w');
+        plot(Xn2(:,1), Xn2(:,2)+sc*U(Nn1+(1:Nn2),ti), 'o-', 'LineWidth', 2, 'MarkerFaceColor', 'w');
+        plot(Xn3(:,1), Xn3(:,2)+sc*U(Nn1+Nn2+(1:Nn2),ti), 'o-', 'LineWidth', 2, 'MarkerFaceColor', 'w');
+
+        ps = [Xn2(1,2)+sc*U(Nn1+1,ti) Xn1(Nn1,2)+sc*U(Nn1,ti)];
+        if diff(ps)>0
+            plot(Xn1(Nn1, 1)*[1 1], ps, 'ro-', 'LineWidth', 2, ...
+                 'MarkerFaceColor', 'r');
+        end
+        ps = [Xn1(Nn1,2)+sc*U(Nn1,ti) Xn3(1,2)+sc*U(Nn1+Nn2+1,ti)];
+        if diff(ps)>0
+            plot(Xn1(Nn1, 1)*[1 1], ps, 'ro-', 'LineWidth', 2, ...
+                 'MarkerFaceColor', 'r');
+        end    
+        axis tight
+        ylim(max(abs(uouts{1}(:, mi))+gap)*[-1 1])
+        grid on
+
+        nsp = [Nn1 Nn1+1 Nn1+Nn2+1];
+        gps = [0 gap -gap];
+        subplot(2,1,2)
+        for i=1:length(ns)
+            plot(t, gps(i)+sc*U(nsp(i),:), 'LineWidth', 2); hold on
+            plot(t(ti), gps(i)+sc*U(nsp(i),ti), 'ko', 'MarkerFaceColor', 'k');
+        end
+        plot(xlim, gap*[1 1], 'k--'); hold on
+        plot(xlim, -gap*[1 1], 'k--'); hold on
+        grid on
+        xlabel('Scaled Time')
+        ylabel('Response')
+        axis tight
+        drawnow
+    end
+end
+
