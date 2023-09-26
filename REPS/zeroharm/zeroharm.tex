@@ -1,0 +1,97 @@
+% Created 2023-09-23 Sat 21:21
+% Intended LaTeX compiler: pdflatex
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{capt-of}
+\usepackage{hyperref}
+\usepackage{tcolorbox}
+\usepackage{minted}
+\usepackage[margin=1in]{geometry}
+\usepackage{xcolor}
+\author{Nidish Narayanaa Balaji}
+\date{\today}
+\title{Question about using the WBM for the zeroth harmonic}
+\hypersetup{
+ pdfauthor={Nidish Narayanaa Balaji},
+ pdftitle={Question about using the WBM for the zeroth harmonic},
+ pdfkeywords={},
+ pdfsubject={},
+ pdfcreator={Emacs 29.1 (Org mode 9.6.6)}, 
+ pdflang={English}}
+\begin{document}
+
+\maketitle
+\begin{enumerate}
+\item Let's take the damped Euler-Bernoulli Beam in a cantilevered configuration:
+\begin{align*}
+\rho A_r \ddot{u} + \alpha \rho A_r \dot{u} + E I u'''' = 0\quad &x\in(0, \ell)\\
+u = u'=0\quad &x=0\quad \text{fixed end}\\
+E I u'' = 0\quad & x=\ell\quad \text{free moment}\\
+E I u''' = f(x,t)\quad &x=\ell\quad \text{excitation}.
+\end{align*}
+\(\dot{(\cdot)}\) and \((\cdot)'\) denote derivatives w.r.t. time \(t\) and space \(x\) respectively.
+\item The dispersion relationship here is
+$$ k(\omega) = {\left[\frac{\rho A_r}{E I} \omega \frac{(\omega+j\alpha)}{(1-j\beta\omega)}\right]}^{1/4}. $$
+\(j\) is the imaginary root \(\sqrt{-1}\).
+\item The wave-based description of the solution is,
+$$ u_n(x,t) = u_0(x) + \sum_{n=1}^H \left(a_n^+ e^{k_nx} + a_n^- e^{-k_nx} + b_n^+ e^{jk_nx} + b_n^- e^{-jk_nx} \right) e^{-j n\Omega t} + c.c. $$
+Here, \(n\) denotes the harmonic, and \(H\) is the truncation order.
+\item In the above, \(u_0(x)\) is expressed separately since it has no time-dependence, and needs to be considered separately.
+\item The equations of motion of the static part (in the measurable part of the domain), and its general solution is,
+$$ u'''' = 0 \implies u(x) = A_0 + x A_1 + x^2 A_2 + x^3 A_3 \quad x\in(0,\ell). $$
+This is completely different from the (spatial) exponential ansatz in the WB context (see \#3 above).
+\item We will now resort to using the above cubic polynomial form and derive transmission, b.c., and force balance equations to accommodate the static parts for the harmonic balance.
+\begin{enumerate}
+\item \textbf{Transmission} between points \(x_A\) and \(x_B\).
+Equating the descriptions about \(x_A\) and \(x_B\) we have,
+$$ A_0 + (x-x_A) A_1 + (x-x_A)^2 A_2 + (x-x_A)^3 A_3 = B_0 + (x-x_B) B_1 + (x-x_B)^2 B_2 + (x-x_B)^3 B_3. $$
+\begin{itemize}
+\item Equating the polynomial coefficients separately we have,
+\begin{align*}
+	\begin{bmatrix} A_0 - x_A A_1 + x_A^2 A_2 - x_A^3 A_3\\ A_1 - 2x_A A_2 + 3x_A^2 A_3\\ A_2 -3x_A A_3\\ A_3 \end{bmatrix} =
+		\begin{bmatrix} B_0 - x_B B_1 + x_B^2 B_2 - x_B^3 B_3\\ B_1 - 2x_B B_2 + 3x_B^2 B_3\\ B_2 -3x_B B_3\\ B_3 \end{bmatrix},\\
+\implies \begin{bmatrix} 1 & -x_A & x_A^2 & -x_A^3\\ 0 & 1 & -2x_A & 3x_A^2\\ 0 & 0 & 1 & -3x_A\\ 0 & 0 & 0 & 1 \end{bmatrix}
+	\begin{bmatrix} A_0\\ A_1\\ A_2\\ A_3 \end{bmatrix} =
+	\begin{bmatrix} 1 & -x_B & x_B^2 & -x_B^3\\ 0 & 1 & -2x_B & 3x_B^2\\ 0 & 0 & 1 & -3x_B\\ 0 & 0 & 0 & 1 \end{bmatrix}
+	\begin{bmatrix} B_0\\ B_1\\ B_2\\ B_3 \end{bmatrix}
+\end{align*}
+\item This presents the analog to the "transmissibility" relationship for the non-zero frequency case.
+\end{itemize}
+\item \textbf{Boundary Conditions} can be quite trivially specified by polynomial evaluation. In this case, at the left end (around \(x_A=0\)), these are,
+$$ \begin{bmatrix} 1 & 0 & 0 & 0\\ 0 & 2 & 0 & 0\\ 0 & 0 & 2 & 0\end{bmatrix}
+      \begin{bmatrix} A_0\\ A_1\\ A_2\\ A_3 \end{bmatrix} =
+      \begin{bmatrix} 0\\ 0\\ 0 \end{bmatrix}. $$
+\item \textbf{Boundary Excitation} can also be written out simply. In this case, around (\(x_B=\ell\)) we have
+$$ 6 E I \begin{bmatrix} 0 & 0 & 0 & 1\end{bmatrix}
+      \begin{bmatrix} B_0\\ B_1\\ B_2\\ B_3 \end{bmatrix} = F_0, $$
+  where \(F_0\) denotes the zeroth harmonic of the excitation.
+\end{enumerate}
+\item Summarily, we have 8 unknowns \(\{A_i\}_{i=0,\dots,3}\) and \(\{B_i\}_{i=0,\dots,3}\), with
+\begin{itemize}
+\item 4 "transmission" equations (see \#6a above)
+\item 3 boundary conditions, and
+\item 1 excitation,
+\end{itemize}
+making the system square.
+\item I'm listing "excitation" separately from boundary conditions since I consider them separate in my implementation of the WBM (I have nonlinear joints and excitation handled similarly).
+\item All in all, this is merely combining the static analytical solution built up using \textbf{piecewise polynomials} (can be generalized to any 1D PDE) that is solved along with the WB equations.
+For the linear case, no coupling between the static and oscillatory components is expected.
+But in the nonlinear case, we expect the nonlinearity to couple these two.
+\item Our example of the impacting cantilevers is symmetric, \textbf{but only for the primary beam!}.
+\textbf{For the secondary beams, the problem is strongly asymmetric}, meaning that we need to admit the zeroth harmonic for accuracy.
+See \ref{fig:org606fac5} below that shows a schematic of the system.
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=.9\linewidth]{../../docs/FIGS/iclbeamsetup.png}
+\caption{\label{fig:org606fac5}A Picture of the model}
+\end{figure}
+\end{enumerate}
+\end{document}

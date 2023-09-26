@@ -16,7 +16,12 @@
 *fig
 /EXAMPLES/DATS/
 <<<<<<< HEAD
+<<<<<<< HEAD
 /NLIMPACTCL/
+=======
+*.mat
+/NLIMPACTCL/FIGS/*.png
+>>>>>>> nlimpactclbeams
 =======
 *.mat
 /NLIMPACTCL/FIGS/*.png
