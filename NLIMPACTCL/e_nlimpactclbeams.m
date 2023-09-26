@@ -166,26 +166,6 @@ else
     Nf = length(Famps);
 end
 
-% %% Estimate Stability Using Determinant
-% ari = zeros(Npts*Nwc*Nhc,1);
-% pds = cell(Nf,1);
-
-% for fi=1:Nf
-%     fprintf('PER Determinant Estimation\n');
-%     pds{fi} = zeros(size(acC{fi},2), 1);
-%     for wi=1:size(acC{fi},2)
-%         ari([rinds0 rinds iinds]) = [acC{fi}(zinds, wi); ...
-%                                      real(acC{fi}(hinds, wi)); ...
-%                                      imag(acC{fi}(hinds, wi))];
-
-%         W = acC{fi}(end, wi);
-        
-%         pAmat = WBPERJACFUN(W, [ari; W], Famps(fi), h, pcs, bcs, joints, Klib);
-%         pds{fi}(wi) = det(pAmat);
-%         fprintf('%d/%d\n', wi, size(acC{fi},2))
-%     end
-% end
-
 %% Plot Results
 stabis = cellfun(@(pp) sign(conv(sign(pp(:)')==sign(pp(1)), [1 1], 'same')), ...
                  pds, 'Uniformoutput', false);  % stability. conv added as visual aid.
