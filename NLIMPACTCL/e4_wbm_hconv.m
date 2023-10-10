@@ -19,7 +19,7 @@ set(0,'defaultAxesFontSize',13)
 savfig = false;
 animfig = false;
 savdat = true;
-analyze = false;
+analyze = true;
 %% Setup Model
 Ey = 2.1e11;
 rho = 7680;
@@ -104,7 +104,7 @@ Nf = length(Famps);
 joints.nl = @(Uw) HCONTACT(Uw, knl, gap, h, Nt);
 
 %% Harmonic Convergence
-Hmaxs = 1:101;
+Hmaxs = 1:40;
 Nh_max = max(Hmaxs)+1;
 Nhc_max = 2*max(Hmaxs)+1;
 aout = zeros(Nh_max, length(Hmaxs), Nf);
@@ -137,10 +137,16 @@ if analyze
                  imag(acC{fi}(hinds(1:Npts*Nwc), mi))];
 
             Wexc = acC{fi}(end, mi);
-            tic
             aris = NSOLVE(@(ari) WVHBRESFUN([ari; Wexc], Famps(fi), h_n, pcs, bcs, joints, Klib), ...
                           ari0, opt);
-            ttks(hi, fi) = toc;
+
+            nrep = 4;
+            tic
+            for nid=1:nrep
+                WVHBRESFUN([aris; Wexc], Famps(fi), h_n, pcs, bcs, joints, Klib);
+            end
+            ttks(hi, fi) = toc/nrep;
+            
             acs = zeros(Npts*Nwc*Nh_n,1);
             acs([zinds_n hinds_n]) = [aris(rinds0_n); aris(rinds_n)+1j*aris(iinds_n)];
             Lsel_n = kron(speye(Nh_n), sum((1:Npts*Nwc)==opi1)-sum((1:Npts*Nwc)==opi2));
@@ -161,27 +167,39 @@ if analyze
     end
 
     if savdat
-        save('./DATS/E4_HCONV.mat', 'Hmaxs', 'Famps', 'aout', 'Wexcs')
+        save('./DATS/E4_HCONV.mat', 'Hmaxs', 'Famps', 'aout', 'Wexcs', 'ttks')
     end
 else
-    load('./DATS/E4_HCONV.mat', 'Hmaxs', 'Famps', 'aout', 'Wexcs')
+    load('./DATS/E4_HCONV.mat', 'Hmaxs', 'Famps', 'aout', 'Wexcs', 'ttks')
 end
 
 %%
-fi = 2;
 thresh = 1e-3;
+pfs = 1:3;
+
+colos = DISTINGUISHABLE_COLORS(length(pfs))*0.75;
 
 hrelconts = squeeze(abs(aout(:,end, :)./aout(2,end, :)));
 figure(1)
 set(gcf, 'Color', 'white')
 clf()
-plot((0:Hmaxs(end)), hrelconts, '.-', 'LineWidth', 2); hold on
+for fi=1:length(pfs)
+    plot((0:Hmaxs(end)), hrelconts(:, pfs(fi)), '.-', 'LineWidth', 2, ...
+         'Color', colos(fi,:)); hold on
+end
 grid on
-legend(arrayfun(@(fa) sprintf('F=%.2f N', fa), Famps, 'UniformOutput', false))
+grid minor
+grid minor
+legend(arrayfun(@(fa) sprintf('F=%.2f N', fa), Famps(pfs), 'UniformOutput', false))
 axis tight
 set(gca, 'YScale', 'log')
 xlabel('Harmonic Index')
 ylabel('Relative Harmonic Content')
+
+if savfig
+    savefig('./FIGS/E4_WBM_HCONTENT.fig')
+    export_fig('./FIGS/E4_WBM_HCONTENT.eps', '-depsc');
+end
 
 relerms = squeeze(rms(aout-aout(:,end,:))./rms(aout(:,end,:)));
 hci = find(any(relerms>thresh,2), 1,'last');
@@ -189,14 +207,57 @@ hci = find(any(relerms>thresh,2), 1,'last');
 figure(2)
 set(gcf, 'Color', 'white')
 clf()
-plot(Hmaxs, relerms, '.-', 'LineWidth', 2); hold on
+for fi=1:length(pfs)
+    plot(Hmaxs, relerms(:, pfs(fi)), '.-', 'LineWidth', 2, ...
+        'Color', colos(fi,:)); hold on
+end
 set(gca, 'YScale', 'log')
 plot(xlim, thresh*[1 1], 'k--')
 plot(Hmaxs(hci)*[1 1], ylim, 'k--')
 grid on
-legend(arrayfun(@(f) sprintf('F=%.2f N', f), Famps, 'UniformOutput', false), ...
+grid minor
+grid minor
+legend(arrayfun(@(f) sprintf('F=%.2f N', f), Famps(pfs), 'UniformOutput', false), ...
        'Location', 'best')
 text(Hmaxs(hci)+1, max(abs(ylim))/2, sprintf('H=%d', Hmaxs(hci)), 'fontsize', 13)
 
 xlabel('Harmonic Truncation Order')
 ylabel('RMS Harmonic Deviation')
+
+if savfig
+    savefig('./FIGS/E4_WBM_HCONV.fig')
+    export_fig('./FIGS/E4_WBM_HCONV.eps', '-depsc');
+end
+
+
+ttks(1)=nan;  % Removing spurious
+figure(3)
+set(gcf, 'Color', 'white')
+clf()
+aa = gobjects(size(pfs));
+for fi=1:length(pfs)
+    aa(fi) = loglog(Hmaxs, ttks(:, pfs(fi)), '.-', 'LineWidth', 2, ...
+                    'Color', colos(fi,:)); hold on
+end
+set(gca, 'YScale', 'log')
+xl = xlim;
+yl = ylim;
+HMS = [min(Hmaxs)/10 max(Hmaxs)*100];
+bb = plot(HMS, HMS.^2/5e3, 'k-', 'LineWidth', 1);
+cc = plot(HMS, HMS.^3/1e5, 'k:', 'LineWidth', 1);
+xlim(xl);
+ylim(yl);
+grid on
+grid minor
+grid minor
+legend(aa, arrayfun(@(f) sprintf('F=%.2f N', f), Famps(pfs), 'UniformOutput', false))
+legend([bb cc], '$\mathcal{O}(H^2)$', '$\mathcal{O}(H^3)$');
+legend([aa bb cc], 'Location', 'southeast')
+
+xlabel('Harmonic Truncation Order')
+ylabel('Avg. CPU Time (s)')
+
+if savfig
+    savefig('./FIGS/E4_WBM_TTK.fig')
+    export_fig('./FIGS/E4_WBM_TTK.eps', '-depsc')
+end

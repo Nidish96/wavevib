@@ -18,7 +18,7 @@ set(0,'defaultAxesFontSize',13)
 savfig = false;
 animfig = false;
 savdat = true;
-analyze = false;
+analyze = true;
 %% Setup Model
 Ey = 2.1e11;
 rho = 7680;
@@ -73,7 +73,7 @@ excs = struct('i', 2, 'nh', 1, ...
 %'nh' sets the harmonic at which to apply the excitation
 
 %% Setup AFT parameters
-h = (0:16)'; % (1:5);
+h = (0:16)'; % (1:16);
 Nt = 2^10;
 
 %% Setup Joints
@@ -107,6 +107,7 @@ Nhc = sum((h==0)+2*(h~=0));
 Wst = 2*pi*4;
 Wen = 2*pi*12;
 dw = 0.75;
+dww = [0.75 0.5 0.75 0.75];
 
 Copt = struct('Nmax', 2000, 'angopt', 5e-2, 'DynDscale', 1);
 % Copt = struct('Nmax', 2000, 'angopt', 5e-2, 'DynDscale', 1, 'solverchoice', 3);
@@ -115,19 +116,22 @@ acC = cell(size(Famps));
 pds = cell(size(Famps));
 if analyze
     for fi=1:length(Famps)
+        joints.nl = @(Uw) HCONTACT(Uw, knl, gap, h, Nt);
         [Amat, dAmatdw, ~, Fv, ~, ~, JEV] = WVAMAT([Wst;0], h, pcs, bcs, joints, Klib, 'r');
         
         ari0 = Amat\(Fv*Famps(fi));
 
-        if fi==4
+        switch fi
+          case {3, 4}
             Copt.solverchoice = 3;
-        elseif fi==3
+          case 2
             Copt.solverchoice = 2;
-        else
+          case 1
             Copt.solverchoice = 1;
         end
         Copt.Dscale = [1e-6*ones(size(ari0));Wst];
         % Copt.Dscale = [5e-6*ones(size(ari0));Wst];
+        dw = dww(fi);
         ariwC = CONTINUE(@(ariw) WVHBRESFUN(ariw, Famps(fi), h, pcs, bcs, joints, Klib), ...
                          ari0, Wst, Wen, dw, Copt);
 
@@ -138,6 +142,7 @@ if analyze
         % Stability Estimation with PER
         pds{fi} = zeros(size(acC{fi},2), 1);
         fprintf('PER Determinant Estimation==================================\n');
+        ariwC([rinds0 rinds iinds end],:) = [acC{fi}(zinds,:); real(acC{fi}(hinds,:)); imag(acC{fi}(hinds,:)); acC{fi}(end,:)];
         for wi=1:size(ariwC,2)
             W = ariwC(end, wi);
             
@@ -166,7 +171,33 @@ else
     Nf = length(Famps);
 end
 
+% %% Stability
+% for fi=1:length(Famps)
+%     % Stability Estimation with PER
+%     pds{fi} = zeros(size(acC{fi},2), 1);
+%     fprintf('PER Determinant Estimation==================================\n');
+%     ariwC = zeros(Npts*Nwc*Nhc+1, size(acC{fi},2));
+%     ariwC([rinds0 rinds iinds end],:) = [acC{fi}(zinds,:); real(acC{fi}(hinds,:)); imag(acC{fi}(hinds,:)); acC{fi}(end,:)];
+%     for wi=1:size(ariwC,2)
+%         W = ariwC(end, wi);
+        
+%         % pAmat = WBPERJACFUN(W, ariwC(:, wi), Famps(fi), h, pcs, bcs, joints, Klib);
+%         joints.nl = @(Uw) HCONTACT(Uw, knl, gap, h, Nt);
+%         pAmat = WBPERJACFUN(W, ariwC(:, wi), ...
+%                             Famps(fi), h, pcs, bcs, joints, Klib);
+        
+%         % % Use only non-zero harmonics
+%         % joints.nl = @(Uw) HCONTACT(Uw, knl, gap, h(h~=0), Nt);
+%         % pAmat = WBPERJACFUN(W, ariwC(Npts*Nwc+1:end, wi), ...
+%         %                     Famps(fi), h(h~=0), pcs, bcs, joints, Klib);
+%         pds{fi}(wi) = det(pAmat);
+%         fprintf('%d/%d\n', wi, size(acC{fi},2))
+%     end
+%     fprintf('PER Determinant Estimation Done=============================\n');
+% end
+
 %% Plot Results
+
 stabis = cellfun(@(pp) sign(conv(sign(pp(:)')==sign(pp(1)), [1 1], 'same')), ...
                  pds, 'Uniformoutput', false);  % stability. conv added as visual aid.
 

@@ -17,7 +17,7 @@ set(0,'defaultAxesFontSize',13)
 
 savfig = false;
 savdat = true;
-analyze = false;
+analyze = true;
 
 %% Setup Model
 Ey = 2.1e11;
@@ -67,7 +67,7 @@ Nn1s = [5 10 20 40 80 160];
 % Nn1s = [5 10 20 40 80 120];
 Routs = zeros(Nhc, length(Nn1s), length(Famps));
 Rrouts = zeros(Nhc, length(Nn1s), length(Famps));
-opt = optimoptions('fsolve', 'specifyObjectiveGradient', true, 'Display', 'iter');
+opt = optimoptions('fsolve', 'specifyObjectiveGradient', true, 'Display', 'off');
 
 if analyze
     for ni=1:length(Nn1s)
@@ -175,18 +175,25 @@ if analyze
             % W_ref = Wexcs(fi);
 	    Wexcs(fi) = W_ref;
             Usol = fsolve(@(U) MDL.HBRESFUN([U; W_ref], Fl*Famps(fi), h, Nt), U0, opt);
+
+            nrep = 4;
+            tic
+            for nid=1:nrep
+                MDL.HBRESFUN([Usol; W_ref], Fl*Famps(fi), h, Nt);
+            end
+            ttks(ni, fi) = toc/nrep;
             %%
             Routs(:, ni, fi) = (Rb*reshape(Usol,Nd,Nhc))';
             Rrouts(:, ni, fi) = (Rrel*reshape(Usol,Nd,Nhc))';
         end
-        fprintf('Done %d/%d', ni, length(Nn1s));
+        fprintf('Done %d/%d\n', ni, length(Nn1s));
     end
 
     if savdat
-        save('./DATS/E2_DATA.mat', 'Routs', 'Rrouts', 'Nn1s', 'Wexcs');
+        save('./DATS/E2_DATA.mat', 'Routs', 'Rrouts', 'Nn1s', 'Wexcs', 'ttks');
     end
 else
-    load('./DATS/E2_DATA.mat', 'Routs', 'Rrouts', 'Nn1s', 'Wexcs');
+    load('./DATS/E2_DATA.mat', 'Routs', 'Rrouts', 'Nn1s', 'Wexcs', 'ttks');
 end
 
 %% Load WBM Solutions
@@ -206,6 +213,8 @@ errs = squeeze(rms(Rrouts-Rrouts(:,end,:))./rms(Rrouts(:,end,:)));  % Abs Errors
 loglog(Nn1s+2*fix(.8*Nn1s), errs, 'o-', 'LineWidth', 2, ...
         'MarkerFaceColor', 'w')
 grid on
+grid minor
+grid minor
 legend(arrayfun(@(f) sprintf('F=%.2f N', f), Famps, 'UniformOutput', false), ...
        'Location', 'best')
 xlabel('Total No. of Nodes')

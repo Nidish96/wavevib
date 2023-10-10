@@ -15,10 +15,10 @@ set(0,'defaultAxesFontSize',13)
 %similar to the jointed bar example. Parameters taken from 
 % Krishna and Chandramouli, 2012
 
-animfig = true;
+animfig = false;
 savfig = false;
 savdat = true;
-analyze = false;
+analyze = true;
 
 %% Setup Model
 Ey = 2.1e11;
@@ -37,8 +37,8 @@ bt = 1.1e-4;  % 1.1e-4, 2.475e-4
 knl = 1210/2;    % 220,      880,    (242, 484, 880, 1210)
 gap = 2.5e-3;   % 2.5e-3,   0.35,   0.35
 
-Nn1 = 10;
-Nn2 = 8;
+Nn1 = 20;
+Nn2 = fix(.8*Nn1);
 Xn1 = [linspace(0, L1, Nn1)' zeros(Nn1,1)];
 Xn2 = [linspace(L1, L1+L2, Nn2)' gap*ones(Nn2,1)];
 Xn3 = [linspace(L1, L1+L2, Nn2)' -gap*ones(Nn2,1)];
@@ -103,7 +103,7 @@ MDL = MDOFGEN(Mb,Kb,Cb,Lb);
 MDL = MDL.SETNLFUN(1+3, Lnls, nlfunc);
 
 %%
-h = (0:16)';
+h = (0:3)';  % 16 is "converged"
 Nt = 1024;
 Nhc = sum((h==0)+2*(h~=0));
 [~,~,zinds,rinds,iinds] = HINDS(1,h);
