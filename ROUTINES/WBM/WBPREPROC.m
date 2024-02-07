@@ -5,9 +5,11 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
         origcoords = [origcoords zeros(size(origcoords,1),3)];
         origcoords = origcoords(:,1:3);
     end
-    origids = cell2mat(arrayfun(@(i) ones(size(pcs(i).coords,1),1)*i, 1:length(pcs), 'UniformOutput', false)');
+    origids = cell2mat(arrayfun(@(i) ones(size(pcs(i).coords,1),1)*i, ...
+                                1:length(pcs), 'UniformOutput', false)');
     origcoords = [origcoords origids];  % last column is piece ID (1-indexed)
     syms w xi
+    
     % 0. Preprocess Klib (for derivatives)
     for i=1:length(Klib)
         if ~isfield(Klib(i), 'dKdw') || isempty(Klib(i).dKdw)
@@ -17,6 +19,7 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
             Klib(i).dKdxi = matlabFunction(diff(Klib(i).K(w,xi), xi), 'Vars', [w xi]);
         end
     end
+    
     % 1. Preprocess Pieces
     Nbef = 0;
     elist = {'exci', 'excnh'};
@@ -68,32 +71,36 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
         pcs(i).irange = Nbef + [1 pcs(i).N];
         Nbef = Nbef + pcs(i).N;
     end
-    procids = cell2mat(arrayfun(@(i) ones(size(pcs(i).coords,1),1)*i, 1:length(pcs), 'UniformOutput', false)');
+    procids = cell2mat(arrayfun(@(i) ones(size(pcs(i).coords,1),1)*i, ...
+                                1:length(pcs), 'UniformOutput', false)');
     proccoords = [cell2mat({pcs.coords}') procids];
 
     % 2. Preprocess Boundary Conditions
     Nwc = size(pcs(1).wcomps,1);
     for n=1:length(bcs)
-        if ~isfield(bcs(n), 'dcofsdw') || isempty(bcs(n).dcofsdw)
-            bcs(n).dcofsdw = matlabFunction(diff(bcs(n).cofs(w,xi), w), 'Vars', [w xi]);
+        if isa(bcs(n).cofs, 'function_handle')
+            if ~isfield(bcs(n), 'dcofsdw') || isempty(bcs(n).dcofsdw)
+                bcs(n).dcofsdw = matlabFunction(diff(bcs(n).cofs(w,xi), w), 'Vars', [w xi]);
+            end
+            if ~isfield(bcs(n), 'dcofsdxi') || isempty(bcs(n).dcofsdxi)
+                bcs(n).dcofsdxi = matlabFunction(diff(bcs(n).cofs(w,xi), xi), 'Vars', [w xi]);
+            end
+            bcs(n).nof = size(bcs(n).cofs(w,xi),1);
+        else  % Constant coefficients
+            bcs(n).nof = size(bcs(n).cofs,1);
         end
-        if ~isfield(bcs(n), 'dcofsdxi') || isempty(bcs(n).dcofsdxi)
-            bcs(n).dcofsdxi = matlabFunction(diff(bcs(n).cofs(w,xi), xi), 'Vars', [w xi]);
-        end
-        bcs(n).nof = size(bcs(n).cofs(w,xi),1);
         if ~isfield(bcs(n), 'rih')
             bcs(n).rih = [];
         end
         if ~isfield(bcs(n), 'rhs') || isempty(bcs(n).rhs)
-            bcs(n).rhs = @(w,xi) 0;
-            bcs(n).drhsdw = @(w,xi) 0;
-            bcs(n).drhsdxi = @(w,xi) 0;
-        else
+            bcs(n).rhs = 0;
+        elseif isa(bcs(n).rhs, 'function_handle')
             if ~isfield(bcs(n), 'drhsdw') || isempty(bcs(n).drhsdw)
                 bcs(n).drhsdw = matlabFunction(diff(bcs(n).rhs(w,xi), w), 'Vars', [w xi]);
             end
             if ~isfield(bcs(n), 'drhsdxi') || isempty(bcs(n).drhsdxi)
-                bcs(n).drhsdxi = matlabFunction(diff(bcs(n).rhs(w,xi), xi), 'Vars', [w xi]);
+                bcs(n).drhsdxi = matlabFunction(diff(bcs(n).rhs(w,xi), xi), ...
+                                                'Vars', [w xi]);
             end
         end
         
@@ -101,14 +108,17 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
         if ~isfield(bcs(n), 'cofs0') || isempty(bcs(n).cofs0)
             bcs(n).cofs0 = matlabFunction(bcs(n).cofs(0, xi), 'Vars', xi);  % Default behavior
         end
-        if ~isfield(bcs(n), 'dcofsdxi0') || isempty(bcs(n).dcofsdxi0)
-            bcs(n).dcofsdxi0 = matlabFunction(diff(bcs(n).cofs0(xi), xi), 'Vars', xi);
-        end
-        assert(size(bcs(n).cofs(w,xi),1) == size(bcs(n).cofs0(xi),1))
-        if ~isfield(bcs(n), 'rhs0') || isempty(bcs(n).rhs0)
-            bcs(n).rhs0 = @(xi) 0;
-            bcs(n).drhsdxi0 = @(xi) 0;
+        if isa(bcs(n).cofs0, 'function_handle')
+            if ~isfield(bcs(n), 'dcofsdxi0') || isempty(bcs(n).dcofsdxi0)
+                bcs(n).dcofsdxi0 = matlabFunction(diff(bcs(n).cofs0(xi), xi), 'Vars', xi);
+            end
+            assert(bcs(n).nof == size(bcs(n).cofs0(xi),1))
         else
+            assert(bcs(n).nof == size(bcs(n).cofs0,1))
+        end
+        if ~isfield(bcs(n), 'rhs0') || isempty(bcs(n).rhs0)
+            bcs(n).rhs0 = 0;
+        elseif isa(bcs(n).rhs, 'function_handle')
             if ~isfield(bcs(n), 'drhsdxi0') || isempty(bcs(n).drhsdxi0)
                 bcs(n).drhsdxi0 = matlabFunction(diff(bcs(n).rhs0(xi), xi), 'Vars', xi);
             end
@@ -125,47 +135,58 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
         if ~isfield(joints(n), 'cofs') || isempty(joints(n).cofs)
             switch joints(n).type
               case {1, 2}
-                joints(n).cofs = @(w,xi) [eye(Nwc) -eye(Nwc)];
+                joints(n).cofs = [eye(Nwc) -eye(Nwc)];
               otherwise
-                joints(n).cofs = @(w,xi) [eye(Nwc)/joints(n).type -repmat(eye(Nwc), 1,joints(n).type-1)];
+                joints(n).cofs = [eye(Nwc)/joints(n).type, ...
+                                  -repmat(eye(Nwc), 1,joints(n).type-1)];
             end
         end
-        if ~isfield(joints(n), 'dcofsdw') || isempty(joints(n).dcofsdw)
-            joints(n).dcofsdw = matlabFunction(diff(joints(n).cofs(w,xi), w), 'Vars', [w xi]);
+        if isa(joints(n).cofs, 'function_handle')
+            if ~isfield(joints(n), 'dcofsdw') || isempty(joints(n).dcofsdw)
+                joints(n).dcofsdw = matlabFunction(diff(joints(n).cofs(w,xi), w), ...
+                                                   'Vars', [w xi]);
+            end
+            if ~isfield(joints(n), 'dcofsdxi') || isempty(joints(n).dcofsdxi)
+                joints(n).dcofsdxi = matlabFunction(diff(joints(n).cofs(w,xi), xi), ...
+                                                    'Vars', [w xi]);
+            end
+            joints(n).nof = size(joints(n).cofs(w,xi),1);
+        else
+            joints(n).nof = size(joints(n).cofs,1);
         end
-        if ~isfield(joints(n), 'dcofsdxi') || isempty(joints(n).dcofsdxi)
-            joints(n).dcofsdxi = matlabFunction(diff(joints(n).cofs(w,xi), xi), 'Vars', [w xi]);
-        end
-        joints(n).nof = size(joints(n).cofs(w,xi),1);
 
         if ~isfield(joints(n), 'rih')
             joints(n).rih = [];
         end
         if ~isfield(joints(n), 'rhs') || isempty(joints(n).rhs)
-            joints(n).rhs = @(w,xi) zeros(Nwc,1);
-            joints(n).drhsdw = @(w,xi) zeros(Nwc,1);
-            joints(n).drhsdxi = @(w,xi) zeros(Nwc,1);
-        else
+            joints(n).rhs = zeros(Nwc,1);
+        elseif isa(joints(n).rhs, 'function_handle')
             if ~isfield(joints(n), 'drhsdw') || isempty(joints(n).drhsdw)
-                joints(n).drhsdw = matlabFunction(diff(joints(n).rhs(w,xi), w), 'Vars', [w xi]);
+                joints(n).drhsdw = matlabFunction(diff(joints(n).rhs(w,xi), w), ...
+                                                  'Vars', [w xi]);
             end
             if ~isfield(joints(n), 'drhsdxi') || isempty(joints(n).drhsdxi)
-                joints(n).drhsdxi = matlabFunction(diff(joints(n).rhs(w,xi), xi), 'Vars', [w xi]);
+                joints(n).drhsdxi = matlabFunction(diff(joints(n).rhs(w,xi), xi), ...
+                                                   'Vars', [w xi]);
             end
         end
         %% Zeroth Harmonics
         if ~isfield(joints(n), 'cofs0') || isempty(joints(n).cofs0)
             joints(n).cofs0 = matlabFunction(joints(n).cofs(0,xi), 'Vars', xi);
         end
-        if ~isfield(joints(n), 'dcofsdxi0') || isempty(joints(n).dcofsdxi0)
-            joints(n).dcofsdxi0 = matlabFunction(diff(joints(n).cofs0(xi), xi), 'Vars', xi);
+        if isa(joints(n).cofs0, 'function_handle')
+            if ~isfield(joints(n), 'dcofsdxi0') || isempty(joints(n).dcofsdxi0)
+                joints(n).dcofsdxi0 = matlabFunction(diff(joints(n).cofs0(xi), xi), ...
+                                                     'Vars', xi);
+            end
+            assert(joints(n).nof == size(joints(n).cofs0(xi),1));
+        else
+            assert(joints(n).nof == size(joints(n).cofs0,1));
         end
-        assert(size(joints(n).cofs(w,xi),1) == size(joints(n).cofs0(xi),1));
 
         if ~isfield(joints(n), 'rhs0') || isempty(joints(n).rhs0)
-            joints(n).rhs0 = @(xi) zeros(Nwc,1);
-            joints(n).drhsdxi0 = @(xi) zeros(Nwc,1);
-        else
+            joints(n).rhs0 = zeros(Nwc,1);
+        elseif isa(joints(n).rhs0, 'function_handle')
             if ~isfield(joints(n), 'drhsdxi0') || isempty(joints(n).drhsdxi0)
                 joints(n).drhsdxi0 = matlabFunction(diff(joints(n).rhs0(xi), xi), 'Vars', xi);
             end
@@ -174,39 +195,53 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
         if ~isfield(joints(n), 'nl') || isempty(joints(n).nl)
             joints(n).nl = [];
         else
-            if ~isfield(joints(n), 'dnlfcofsdw') || isempty(joints(n).dnlfcofsdw)
-                joints(n).dnlfcofsdw = matlabFunction(diff(joints(n).nlfcofs(w,xi), w), 'Vars', [w xi]);
-            end
-            if ~isfield(joints(n), 'dnlfcofsdxi') || isempty(joints(n).dnlfcofsdxi)
-                joints(n).dnlfcofsdxi = matlabFunction(diff(joints(n).nlfcofs(w,xi), xi), 'Vars', [w xi]);
-            end
-            
-            if ~isfield(joints(n), 'dnldcofsdw') || isempty(joints(n).dnldcofsdw)
-                joints(n).dnldcofsdw = matlabFunction(diff(joints(n).nldcofs(w,xi), w), 'Vars', [w xi]);
-            end
-            if ~isfield(joints(n), 'dnldcofsdxi') || isempty(joints(n).dnldcofsdxi)
-                joints(n).dnldcofsdxi = matlabFunction(diff(joints(n).nldcofs(w,xi), xi), 'Vars', [w xi]);
+            if isa(joints(n).nlfcofs, 'function_handle')
+                if ~isfield(joints(n), 'dnlfcofsdw') || isempty(joints(n).dnlfcofsdw)
+                    joints(n).dnlfcofsdw = ...
+                        matlabFunction(diff(joints(n).nlfcofs(w,xi), w), 'Vars', [w xi]);
+                end
+                if ~isfield(joints(n), 'dnlfcofsdxi') || isempty(joints(n).dnlfcofsdxi)
+                    joints(n).dnlfcofsdxi = ...
+                        matlabFunction(diff(joints(n).nlfcofs(w,xi), xi), 'Vars', [w xi]);
+                end
             end
 
-            joints(n).nld = size(joints(n).nldcofs(0,0), 1);
+            if isa(joints(n).nldcofs, 'function_handle')
+                if ~isfield(joints(n), 'dnldcofsdw') || isempty(joints(n).dnldcofsdw)
+                    joints(n).dnldcofsdw = ...
+                        matlabFunction(diff(joints(n).nldcofs(w,xi), w), 'Vars', [w xi]);
+                end
+                if ~isfield(joints(n), 'dnldcofsdxi') || isempty(joints(n).dnldcofsdxi)
+                    joints(n).dnldcofsdxi = ...
+                        matlabFunction(diff(joints(n).nldcofs(w,xi), xi), 'Vars', [w xi]);
+                end
+                joints(n).nld = size(joints(n).nldcofs(0,0), 1);
+            else
+                joints(n).nld = size(joints(n).nldcofs, 1);
+            end
 
             % Zeroth Harmonic
             if ~isfield(joints(n), 'nlfcofs0') || isempty(joints(n).nlfcofs0)
                 joints(n).nlfcofs0 = matlabFunction(joints(n).nlfcofs(0, xi), 'Vars', xi);
             end
-            if ~isfield(joints(n), 'dnlfcofsdxi0') || isempty(joints(n).dnlfcofsdxi0)
-                joints(n).dnlfcofsdxi0 = matlabFunction(diff(joints(n).nlfcofs0(xi), xi), ...
-                                                        'Vars', xi);
+            if isa(joints(n).nlfcofs0, 'function_handle')
+                if ~isfield(joints(n), 'dnlfcofsdxi0') || isempty(joints(n).dnlfcofsdxi0)
+                    joints(n).dnlfcofsdxi0 = ...
+                        matlabFunction(diff(joints(n).nlfcofs0(xi), xi), 'Vars', xi);
+                end
             end
             if ~isfield(joints(n), 'nldcofs0') || isempty(joints(n).nldcofs0)
                 joints(n).nldcofs0 = matlabFunction(joints(n).nldcofs(0, xi), 'Vars', xi);
             end
-            if ~isfield(joints(n), 'dnldcofsdxi0') || isempty(joints(n).dnldcofsdxi0)
-                joints(n).dnldcofsdxi0 = matlabFunction(diff(joints(n).nldcofs0(xi), xi), ...
-                                                        'Vars', xi);
+            if isa(joints(n).nldcofs0, 'function_handle')
+                if ~isfield(joints(n), 'dnldcofsdxi0') || isempty(joints(n).dnldcofsdxi0)
+                    joints(n).dnldcofsdxi0 = ...
+                        matlabFunction(diff(joints(n).nldcofs0(xi), xi), 'Vars', xi);
+                end
+                assert(joints(n).nld == size(joints(n).nldcofs0(0), 1));
+            else
+                assert(joints(n).nld == size(joints(n).nldcofs0, 1));
             end
-
-            assert(size(joints(n).nldcofs(0,0), 1) == size(joints(n).nldcofs0(0), 1));
         end        
 
         %% Account for new nodes included in model
@@ -244,18 +279,24 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
         if length(mi)~=2
             error('Multiplicity of excitation point: %d. Unknown case.', length(mi));
         end
-        if ~isfield(excs(n), 'drcofsdw') || isempty(excs(n).drcofsdw)
-            excs(n).drcofsdw = matlabFunction(diff(excs(n).rcofs(w,xi), w), 'Vars', [w xi]);
-        end
-        if ~isfield(excs(n), 'drcofsdxi') || isempty(excs(n).drcofsdxi)
-            excs(n).drcofsdxi = matlabFunction(diff(excs(n).rcofs(w,xi), xi), 'Vars', [w xi]);
+        if isa(excs(n).rcofs, 'function_handle')
+            if ~isfield(excs(n), 'drcofsdw') || isempty(excs(n).drcofsdw)
+                excs(n).drcofsdw = matlabFunction(diff(excs(n).rcofs(w,xi), w), ...
+                                                  'Vars', [w xi]);
+            end
+            if ~isfield(excs(n), 'drcofsdxi') || isempty(excs(n).drcofsdxi)
+                excs(n).drcofsdxi = matlabFunction(diff(excs(n).rcofs(w,xi), xi), ...
+                                                   'Vars', [w xi]);
+            end
         end
         % static forcing
         if ~isfield(excs(n), 'rcofs0') || isempty(excs(n).rcofs0)
             excs(n).rcofs0 = matlabFunction(excs(n).rcofs(0, xi), 'Vars', xi);  % Default behavior
         end
-        if ~isfield(excs(n), 'drcofsdxi0') || isempty(excs(n).drcofsdxi0)
-            excs(n).drcofsdxi0 = matlabFunction(diff(excs(n).rcofs0(xi), xi), 'Vars', xi);
+        if isa(excs(n).rcofs0, 'function_handle')
+            if ~isfield(excs(n), 'drcofsdxi0') || isempty(excs(n).drcofsdxi0)
+                excs(n).drcofsdxi0 = matlabFunction(diff(excs(n).rcofs0(xi), xi), 'Vars', xi);
+            end
         end
 
         if ~isfield(excs(n), 'nh') || isempty(excs(n).nh)
@@ -270,9 +311,33 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
 
         pcs(pi).exci = [pcs(pi).exci; excs(n).i-pcs(pi).irange(1)+1];
         pcs(pi).excnh = [pcs(pi).excnh; excs(n).nh];
-        pcs(pi).exccofs = {pcs(pi).exccofs{:}; 
-                           {excs(n).rcofs, excs(n).drcofsdw, excs(n).drcofsdxi}};
-        pcs(pi).exccofs0 = {pcs(pi).exccofs0{:}; 
-                            {excs(n).rcofs0, excs(n).drcofsdxi0}};
+        if isa(excs(n).rcofs, 'function_handle')
+            pcs(pi).exccofs = {pcs(pi).exccofs{:}; 
+                               {excs(n).rcofs, excs(n).drcofsdw, excs(n).drcofsdxi}};
+        else
+            pcs(pi).exccofs = {pcs(pi).exccofs{:}; excs(n).rcofs};
+        end
+        if isa(excs(n).rcofs0, 'function_handle')
+            pcs(pi).exccofs0 = {pcs(pi).exccofs0{:}; 
+                                {excs(n).rcofs0, excs(n).drcofsdxi0}};
+        else
+            pcs(pi).exccofs0 = {pcs(pi).exccofs0{:}; excs(n).rcofs0};
+        end
+    end
+
+    % 5. Maintain lists of nonlinear joint dofs in pcs
+    nlis = find(arrayfun(@(j) ~isempty(j.nl), joints));
+    nnl = length(nlis);
+    for i=1:nnl
+        k = nlis(i);
+
+        for j=1:joints(k).type
+            pcs(joints(k).ps(j)).kni = joints(k).is(j)-pcs(joints(k).ps(j)).irange(1)+1;
+        end
+    end
+    for i=1:length(pcs)
+        if ~isfield(pcs(i), 'kni') || isempty(pcs(i).kni)
+            pcs(i).kni=pcs(i).N;
+        end
     end
 end

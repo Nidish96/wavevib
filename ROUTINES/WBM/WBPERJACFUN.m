@@ -42,10 +42,19 @@ function [pAmat] = WBPERJACFUN(lams, Ariw, Famp, h, pcs, bcs, joints, Klib)
         U = JEV(i).Lj*Ariw(1:end-Nc);
         dUdw = cell2mat(arrayfun(@(a) JEV(i).dLjdw(:, :, a)*Ariw(1:end-Nc), 1:Nc, 'UniformOutput', false));
 
-        [Fnlk, dFnldUk, dFnldwk] = joints(k).nl([2*U; ws]);
-        Fnlk = 1/2*Fnlk;
-        dFnldUk = 1/2*dFnldUk*2;
-        dFnldwk = 1/2*dFnldwk;
+        nfnl = size(JEV(i).Gj,2)/Nhc;
+        Fsc = 1/2*ones(nfnl*Nhc,1);
+        Usc = 2*ones(joints(i).nld*Nhc,1);
+        if sum(all(h==0,2))~=0
+            assert(all(h(1,:)==0))
+            Fsc(1:nfnl) = 2*Fsc(1:nfnl);
+            Usc(1:joints(i).nld) = Usc(1:joints(i).nld)/2;
+        end
+
+        [Fnlk, dFnldUk, dFnldwk] = joints(k).nl([Usc.*U; ws]);
+        Fnlk = Fsc.*Fnlk;
+        dFnldUk = Fsc.*dFnldUk.*Usc';
+        dFnldwk = Fsc.*dFnldwk;
 
         FNL = FNL + JEV(i).Gj*Fnlk;
         dFNLdA = dFNLdA + JEV(i).Gj*dFnldUk*JEV(i).Lj;

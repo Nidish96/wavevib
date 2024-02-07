@@ -1,360 +1,335 @@
-function [Amat, dAmatdw, dAmatdxi, Fv, dFvdw, dFvdxi, JEV] = WVAMATr(wxi, h, pcs, bcs, joints, Klib, varargin)
-%WVAMATr returns the linear "A" matrix and "F" vector for the wave-based
-%model using reduced parameterization. Also returned are the Jacobians w.r.t.
-%w (frequency) and xi (parameter) and selector-projector matrices for
-%evaluating the nonlinearities.
-% Returns in either complex or real-imaginary representation.
-%   This routine is for the general quasi-periodic case (with multiple
-%   incommensurate frequency components).
-%
-%   This parameterization is used for the "smallest-sized" WBMs. Each
-%   wave-based piece is represented using exactly one point. This is
-%   achieved by solving the linear transmission conditions within each
-%   piece. Computationally, this scales better for most problems and has to
-%   be preferred over the other version. 
-%       The "reduced parameterization" routines are suffixed with "r".
-%
-%   USAGE:
-%       [Amat, dAmatdw, dAmatdxi, Fv, dFvdw, dFvdxi, JEV] = WVAMATr(wxi, h, pcs, bcs, joints, Klib);
-%           (OR)
-%       [Amat, dAmatdw, dAmatdxi, Fv, dFvdw, dFvdxi, JEV] = WVAMATr(wxi, h, pcs, bcs, joints, Klib, 'r');
-%   INPUTS:
-%       wxi     : (Nc+Npar,1) vector of (frequency,parameter)
-%       h       : (Nh,Nc) list of harmonics
-%       pcs     : (array of structs) wave-based pieces with fields,
-%           'coords'
-%           'wcomps'
-%           'irange'
-%           'exci'
-%           'excnh'
-%           'exccofs'
-%       bcs     : (array of structs) boundary conditions with fields,
-%           'i', 'pi'
-%           'cofs', 'dcofsdw', 'dcofsdxi'
-%           'rhs', 'drhsdw', 'drhsdxi'
-%           'rih'
-%       joints  : (array of structs) joints' informations with fields,
-%           'type' (currently only supports 2)
-%           'i', 'j'            , 'pi', 'pj'
-%           'cofs', 'dcofsdw', 'dcofsdxi'
-%           'rhs', 'drhsdw', 'drhsdxi'
-%               If nonlinear,
-%           'nl',
-%           'nldcofs', 'dnldcofsdw', 'dnldcofsdxi'
-%           'nlfcofs', 'dnlfcofsdw', 'dnlfcofsdxi'
-%           'nld'
-%       Klib    : (array of structs) function handles of dispersion
-%           relationships in the form of K=f(w,xi) with fields
-%           'K', 'dKdw', 'dKdxi'
-%           (OPTIONAL)
-%       rep     : ('c' or 'r') [Default] 'c' - complex representation
-%                                        'r' - real-imaginary
-%                                        representation
-%   OUTPUTS:
-%       Amat    : (Npcs*Nwc*Nh, Npcs*Nwc*Nh) OR (Npcs*Nwc*Nhc, Npcs*Nwc*Nhc)
-%       dAmatdw : (Npcs*Nwc*Nh, Npcs*Nwc*Nh) OR (Npcs*Nwc*Nhc, Npcs*Nwc*Nhc)
-%       dAmatdxi: (Npcs*Nwc*Nh, Npcs*Nwc*Nh) OR (Npcs*Nwc*Nhc, Npcs*Nwc*Nhc)
-%       Fv      : (Npcs*Nwc*Nh, 1) OR (Npcs*Nwc*Nhc, 1)
-%       dFvdw   : (Npcs*Nwc*Nh, 1) OR (Npcs*Nwc*Nhc, 1)
-%       dFvdxi  : (Npcs*Nwc*Nh, 1) OR (Npcs*Nwc*Nhc, 1)
-%       JEV     : (array of structs) with fields
-%           'Lj' , 'dLjdw' , 'dLjdxi'
-%           'LjR', 'dLjRdw', 'dLjRdxi'
-%           'Gj' , 'dGjdw' , 'dGjdxi'
+function [Amatr, dAmatdwr, dAmatdxir, Fvr, dFvdwr, dFvdxir, JEVr, RECOV] = WVAMATr(wxi, h, pcs, bcs, joints, Klib, varargin)
 
-    Npcs = length(pcs);
     Npts = pcs(end).irange(end);
-    Nwc  = size(pcs(1).wcomps,1);  % Number of wave components
-    Nh   = size(h,1);  % Number of harmonics
-    Nc   = size(h,2);  % Number of incommensurate frequency components
+    Nc = size(h,2);
     Npar = length(wxi)-Nc;
+    Nwc = size(pcs(1).wcomps, 1);
 
-    Amat = zeros(Npcs*Nwc*Nh);
-    dAmatdw = zeros(Npcs*Nwc*Nh,Npcs*Nwc*Nh,Nc);
-    dAmatdxi = zeros(Npcs*Nwc*Nh,Npcs*Nwc*Nh,Npar);
-    Fv = zeros(Npcs*Nwc*Nh,1);
-    dFvdw = zeros(Npcs*Nwc*Nh,Nc);
-    dFvdxi = zeros(Npcs*Nwc*Nh,Npar);
-
-    Rh = zeros(Npts*Nwc, Npcs*Nwc);
-    dRhdw = zeros((Npts*Nwc)*(Npcs*Nwc), Nc);
-    dRhdxi = zeros((Npts*Nwc)*(Npcs*Nwc), Npar);
-
-    Ri = zeros(Npts*Nwc, 1);
-    dRidw = zeros(Npts*Nwc, Nc);
-    dRidxi = zeros(Npts*Nwc, Npar);
-
-    % Setup Selector-Projectors for Nonlinearities
-    nlis = find(arrayfun(@(j) ~isempty(j.nl), joints));
-    nnl = length(nlis);
-    Lj = cell(nnl,1);    dLjdw = cell(nnl,1);    dLjdxi = cell(nnl,1);
-    LjR= cell(nnl,1);    dLjRdw= cell(nnl,1);    dLjRdxi= cell(nnl,1);
-    Gj = cell(nnl,1);    dGjdw = cell(nnl,1);    dGjdxi = cell(nnl,1);
-    for n=1:length(nlis)
-        k = nlis(n);
-        
-        Lj{n} = zeros(joints(k).nld*Nh, Npcs*Nwc*Nh);
-        dLjdw{n} = zeros(joints(k).nld*Nh, Npcs*Nwc*Nh, Nc);
-        dLjdxi{n} = zeros(joints(k).nld*Nh, Npcs*Nwc*Nh, Npar);
-
-        LjR{n} = zeros(joints(k).nld*Nh, 1);
-        dLjRdw{n} = zeros(joints(k).nld*Nh, Nc);
-        dLjRdxi{n} = zeros(joints(k).nld*Nh, Npar);
-
-        Gj{n} = zeros(Npcs*Nwc*Nh, joints(k).nld*Nh);
-        dGjdw{n} = zeros(Npcs*Nwc*Nh, joints(k).nld*Nh, Nc);
-        dGjdxi{n} = zeros(Npcs*Nwc*Nh, joints(k).nld*Nh, Npar);
-    end    
+    Nh = length(h);
     
-    % 1. Propagation Relationships
+    % Compute full Amat
+    [Amat, dAmatdw, dAmatdxi, Fv, dFvdw, dFvdxi, JEV] = ...
+        WVAMAT(wxi, h, pcs, bcs, joints, Klib);
+
+    Npc = length(pcs);
+    Leye = speye(Npts*Nwc);
+
+    Qms = cell(Nh, 1);
+    Qvs = cell(Nh, 1);
+
+    dQmdws = cell(Nh, 1);
+    dQvdws = cell(Nh, 1);
+
+    dQmdxis = cell(Nh, 1);
+    dQvdxis = cell(Nh, 1);
+
+    % Tms = cell(Nh, 1);
+
+    Amatr = cell(Nh, 3);
+    Fvr = cell(Nh, 3);
+    
+    Ljr = cell(length(JEV), 1);
+    dLjdwr = cell(length(JEV), 1);
+    dLjdxir = cell(length(JEV), 1);
+    Ljvr = cell(length(JEV), 1);
+    dLjvdwr = cell(length(JEV), 1);
+    dLjvdxir = cell(length(JEV), 1);
+    Gjr = cell(length(JEV), 1);
+    dGjdwr = cell(length(JEV), 1);
+    dGjdxir = cell(length(JEV), 1);
+    for i=1:length(JEV)
+        Ljr{i} = cell(Nh, 1);
+        dLjdwr{i} = cell(Nh, 1);
+        dLjdxir{i} = cell(Nh, 1);
+        Ljvr{i} = cell(Nh, 1);
+        dLjvdwr{i} = cell(Nh, 1);
+        dLjvdxir{i} = cell(Nh, 1);
+        Gjr{i} = cell(Nh, 1);
+        dGjdwr{i} = cell(Nh, 1);
+        dGjdxir{i} = cell(Nh, 1);
+    end
+
+    used_eqis = [];
     for ih=1:Nh
-        hstart_pt = (ih-1)*(Npts*Nwc);
-        hstart_pc = (ih-1)*(Npcs*Nwc);
+        hstart = (ih-1)*Npts*Nwc;
+        k = 0;
 
-        Rh = reshape(Rh, Npts*Nwc, Npcs*Nwc);
-        dRhdw = reshape(dRhdw, (Npts*Nwc)*(Npcs*Nwc), Nc);
-        dRhdxi = reshape(dRhdxi, (Npts*Nwc)*(Npcs*Nwc), Npar);
+        Qm = zeros(Npts*Nwc, Npc*Nwc);
+        dQmdw = zeros(Npts*Nwc, Npc*Nwc, Nc);
+        dQmdxi = zeros(Npts*Nwc, Npc*Nwc, Npar);
+        Qv = zeros(Npts*Nwc, 1);
+        dQvdw = zeros(Npts*Nwc, Nc);
+        dQvdxi = zeros(Npts*Nwc, Npar);
 
+        % 1. Simplify All Propagations
         for i=1:length(pcs)
-            % Wavenumbers of the different components
-            Ks = arrayfun(@(k) k.K(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar))), Klib);  %(nk,1)
-            dKdws = cell2mat(arrayfun(@(k) k.dKdw(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*h(ih, :), Klib, 'UniformOutput', false));  %(nk,Nc)
-            dKdxis = arrayfun(@(k) k.dKdxi(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar))), Klib);  %(nk,Npar)
+            qi = (i-1)*Nwc+1;
+            qe = i*Nwc;
 
-            K = pcs(i).wcomps(:,1).*Ks(pcs(i).wcomps(:,2));  %(Nwc,1)
-            dKdw = pcs(i).wcomps(:,1).*dKdws(pcs(i).wcomps(:,2),:);  %(Nwc,Nc)
-            dKdxi = pcs(i).wcomps(:,1).*dKdxis(pcs(i).wcomps(:,2),:);  %(Nwc,Npar)
+            ri = ((pcs(i).irange(1)-1)+1-1)*Nwc+1;
+            re = ((pcs(i).irange(1)-1)+1)*Nwc;
 
-            % For first point
-            si = hstart_pt*0 + ((pcs(i).irange(1)-1)+1-1)*Nwc+1;
-            se = hstart_pt*0 + ((pcs(i).irange(1)-1)+1)*Nwc;
+            Qm(ri:re, qi:qe) = speye(Nwc);
+            for n=1:pcs(i).N-1
+                k = k+1;
+                si = (k-1)*Nwc+1;
+                se = k*Nwc;
 
-            qi = hstart_pc*0 + (i-1)*Nwc+1;
-            qe = hstart_pc*0 + i*Nwc;
+                ri = ((pcs(i).irange(1)-1)+n-1)*Nwc+1;
+                re = ((pcs(i).irange(1)-1)+n)*Nwc;
 
-            inds = sub2ind([Npts Npcs]*Nwc, si:se, qi:qe);  %% Fix indices
-            Rh(inds) = 1.0; % other terms are zero
-            Ri(si:se) = 0.0;
-            for n=2:pcs(i).N
-                sim1 = si;
-                sem1 = se;
+                rpi = ((pcs(i).irange(1)-1)+n)*Nwc+1;
+                rpe = ((pcs(i).irange(1)-1)+n+1)*Nwc;
 
-                si = hstart_pt*0 + ((pcs(i).irange(1)-1)+n-1)*Nwc+1;
-                se = hstart_pt*0 + ((pcs(i).irange(1)-1)+n)*Nwc;
+                Qm(rpi:rpe, qi:qe) = Amat(hstart+(si:se), hstart+(ri:re))*Qm(ri:re, qi:qe);
+                Qv(rpi:rpe) = Amat(hstart+(si:se), hstart+(ri:re))*Qv(ri:re) - ...
+                    Fv(hstart+(si:se));
 
-                qi = hstart_pc*0 + (i-1)*Nwc+1;
-                qe = hstart_pc*0 + i*Nwc;
-                
-                dx = abs((pcs(i).U(n)-pcs(i).U(n-1))*pcs(i).S);
+                dQmdw(rpi:rpe, qi:qe, :) = cell2mat( arrayfun(...
+                    @(iw) dAmatdw(hstart+(si:se), hstart+(ri:re), iw)*Qm(ri:re, qi:qe) + ...
+                    Amat(hstart+(si:se), hstart+(ri:re))*dQmdw(ri:re, qi:qe, iw), ...
+                    permute(1:Nc, [1 3 2]), 'UniformOutput', false) );
+                dQmdxi(rpi:rpe, qi:qe, :) = cell2mat( arrayfun(...
+                    @(ix) dAmatdxi(hstart+(si:se), hstart+(ri:re), ix)*Qm(ri:re, qi:qe) + ...
+                    Amat(hstart+(si:se), hstart+(ri:re))*dQmdxi(ri:re, qi:qe, ix), ...
+                    permute(1:Npar, [1 3 2]), 'UniformOutput', false) );
 
-                indsm1 = inds;
-                inds = sub2ind([Npts Npcs]*Nwc, si:se, qi:qe);
-                Rh(inds(:)) = exp(K*dx).*Rh(indsm1(:));
-                dRhdw(inds,:) = Rh(inds(:)).*dKdw*dx + ...
-                    exp(K*dx).*dRhdw(indsm1,:);
-                dRhdxi(inds,:) = Rh(inds(:)).*dKdxi*dx + ...
-                    exp(K*dx).*dRhdxi(indsm1,:);
+                dQvdw(rpi:rpe) = cell2mat( arrayfun( ...
+                    @(iw) dAmatdw(hstart+(si:se), hstart+(ri:re), iw)*Qv(ri:re) + ...
+                    Amat(hstart+(si:se), hstart+(ri:re))*dQvdw(ri:re, iw) - ...
+                    dFvdw(hstart+(si:se), iw), 1:Nc, 'Uniformoutput', false) );
+                dQvdxi(rpi:rpe) = cell2mat( arrayfun( ...
+                    @(ix) dAmatdxi(hstart+(si:se), hstart+(ri:re), ix)*Qv(ri:re) + ...
+                    Amat(hstart+(si:se), hstart+(ri:re))*dQvdxi(ri:re, ix) - ...
+                    dFvdw(hstart+(si:se), ix), 1:Npar, 'Uniformoutput', false) );
+            end
+        end
+        ktn = (Npts-length(pcs))*Nwc;
+        used_eqis = (1:ktn);
+        
+        % 2. Simplify All Boundary Conditions & linear joints
+        ktn = hstart + (Npts-length(pcs))*Nwc;
+        nbcs = sum([bcs.nof]);
+        eqis = (1:nbcs);
 
-                Ri(si:se) = exp(K*dx).*Ri(sim1:sem1);
-                dRidw(si:se,:) = Ri(si:se).*dKdw*dx + ...
-                    exp(K*dx).*dRidw(sim1:sem1,:);
-                dRidxi(si:se,:) = Ri(si:se).*dKdxi*dx + ...
-                    exp(K*dx).*dRidxi(sim1:sem1,:);
+        % linear joints
+        linjis = find(arrayfun(@(j) isempty(j.nl), joints));  % Linear joints
 
-                % Check if this is an excitation point
-                ei = find(pcs(i).exci==n-1);
-                if ~isempty(ei)
-                    if length(ei)>1
-                        error('More than 1 excitation location detected. Check pcs.');
-                    end
+        jeqis = cumsum([1 joints.nof]);  % Joint eq ids
+        j0 = jeqis(1:end-1);
+        je = jeqis(2:end)-1;
 
-                    if all(pcs(i).excnh(ei,:)==h(ih,:))
-                        Ri(si:se) = Ri(si:se) + pcs(i).exccofs{ei}{1}(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));
-                        dRidw(si:se,:) = dRidw(si:se,:) + pcs(i).exccofs{ei}{2}(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar))).*h(ih,:);
-                        dRidxi(si:se,:) = dRidxi(si:se,:) + pcs(i).exccofs{ei}{2}(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));
-                    end
+        lis = [];
+        for i=linjis
+            lis = [lis j0(i):je(i)];
+        end
+        eqis = [eqis nbcs+lis];
+        
+        B1 = Amat(ktn+eqis, hstart+(1:Npts*Nwc))*Qm;
+        B2 = Amat(ktn+eqis, hstart+(1:Npts*Nwc))*Qv - Fv(ktn+eqis);
+
+        dB1dw = cell2mat( arrayfun( ...
+            @(iw) dAmatdw(ktn+eqis, hstart+(1:Npts*Nwc), iw)*...
+            Qm(1:Npts*Nwc, 1:Npc*Nwc) + ...
+            Amat(ktn+eqis, hstart+(1:Npts*Nwc))*...
+            dQmdw(1:Npts*Nwc, 1:Npc*Nwc, iw), ...
+            permute(1:Nc, [1 3 2]), 'Uniformoutput', false));
+        dB1dxi = cell2mat( arrayfun( ...
+            @(ixi) dAmatdxi(ktn+eqis, hstart+(1:Npts*Nwc), ixi)*...
+            Qm(1:Npts*Nwc, 1:Npc*Nwc) + ...
+            Amat(ktn+eqis, hstart+(1:Npts*Nwc))*...
+            dQmdxi(1:Npts*Nwc, 1:Npc*Nwc, ixi), ...
+            permute(1:Npar, [1 3 2]), 'Uniformoutput', false) );
+        
+        dB2dw = cell2mat( arrayfun( ...
+            @(iw) dAmatdw(ktn+eqis, hstart+(1:Npts*Nwc),iw)*...
+            Qv(1:Npts*Nwc) + Amat(ktn+eqis, hstart+(1:Npts*Nwc))*...
+            dQvdw(1:Npts*Nwc,iw) - dFvdw(ktn+eqis,iw), ...
+            1:Nc, 'Uniformoutput', false) );
+        dB2dxi = cell2mat( arrayfun( ...
+            @(ixi) dAmatdxi(ktn+eqis, hstart+(1:Npts*Nwc),ixi)*...
+            Qv(1:Npts*Nwc) + Amat(ktn+eqis, hstart+(1:Npts*Nwc))*...
+            dQvdxi(1:Npts*Nwc,ixi) - dFvdxi(ktn+eqis,ixi), ...
+            1:Nc, 'Uniformoutput', false) );
+
+        % Analytical Null-Space
+        neqs = length(eqis);
+        rng(1);
+        ninds = find(any(B1));
+        while rank(B1(:, ninds(1:neqs)))<neqs
+            ninds = ninds(randperm(length(ninds)));
+        end
+        ninds = [ninds setdiff(1:size(B1,2), ninds)];
+        [~, si] = sort(ninds);
+
+        tmp1 = B1(:, ninds(1:neqs))\B1(:, ninds(neqs+1:end));
+        tmp2 = B1(:, ninds(1:neqs))\B2;
+
+        dtmp1dw = cell2mat( arrayfun( ...
+            @(iw) -B1(:, ninds(1:neqs))\dB1dw(:, ninds(1:neqs), iw)*tmp1 + ...
+            B1(:, ninds(1:neqs))\dB1dw(:, ninds(neqs+1:end), iw), ...
+            permute(1:Nc, [1 3 2]), 'Uniformoutput', false) );
+        dtmp1dxi = cell2mat( arrayfun( ...
+            @(ixi) -B1(:, ninds(1:neqs))\dB1dxi(:, ninds(1:neqs), ixi)*tmp1 + ...
+            B1(:, ninds(1:neqs))\dB1dxi(:, ninds(neqs+1:end), ixi), ...
+            permute(1:Npar, [1 3 2]), 'Uniformoutput', false) );
+
+        dtmp2dw = cell2mat( arrayfun( ...
+            @(iw) -B1(:, ninds(1:neqs), iw)\dB1dw(:, ninds(1:neqs))*tmp2 + ...
+            B1(:, ninds(1:neqs))\dB2dw, 1:Nc, 'Uniformoutput', false) );
+        dtmp2dxi = cell2mat( arrayfun( ...
+            @(ixi) -B1(:, ninds(1:neqs), ixi)\dB1dxi(:, ninds(1:neqs))*tmp2 + ...
+            B1(:, ninds(1:neqs))\dB2dxi, 1:Nc, 'Uniformoutput', false) );
+        
+        Bm = [-tmp1; speye(size(B1,2)-neqs)];
+        Bv = [-tmp2; zeros(size(B1,2)-neqs,1)];
+        Bm = Bm(si, :);
+        Bv = Bv(si, :);
+
+        dBmdw = cat(1, -dtmp1dw, zeros(size(B1,2)-neqs));
+        dBvdw = cat(1, -dtmp2dw, zeros(size(B1,2)-neqs,1));
+        dBmdxi = cat(1, -dtmp1dxi, zeros(size(B1,2)-neqs));
+        dBvdxi = cat(1, -dtmp2dxi, zeros(size(B1,2)-neqs,1));
+
+        dBmdw = dBmdw(si, :, :);
+        dBvdw = dBvdw(si, :);
+
+        dQvdw = cell2mat( arrayfun( ...
+            @(iw) dQmdw(:,:,iw)*Bv+Qm*dBvdw(:,iw), permute(1:Nc, [1 3 2]), ...
+            'Uniformoutput', false) ) + dQvdw;
+        dQvdxi = cell2mat( arrayfun( ...
+            @(ixi) dQmdxi(:,:,ixi)*Bv+Qm*dBvdxi(:,ixi), permute(1:Nc, [1 3 2]), ...
+            'Uniformoutput', false) ) + dQvdxi;        
+        
+        dQmdw = cell2mat( arrayfun( ...
+            @(iw) dQmdw(:,:,iw)*Bm+Qm*dBmdw(:,:,iw), permute(1:Nc, [1 3 2]), ...
+            'Uniformoutput', false) );
+        dQmdxi = cell2mat( arrayfun( ...
+            @(ixi) dQmdxi(:,:,ixi)*Bm+Qm*dBmdxi(:,:,ixi), permute(1:Nc, [1 3 2]), ...
+            'Uniformoutput', false) );
+        
+        Qv = Qm*Bv+Qv;
+        Qm = Qm*Bm;
+
+        used_eqis = [used_eqis (Npts-length(pcs))*Nwc+eqis];
+        unused_eqis = setdiff(1:Npts*Nwc, used_eqis);
+
+        %% Finalize
+        Qms{ih} = Qm;
+        Qvs{ih} = Qv;
+
+        dQmdws{ih} = dQmdw;
+        dQmdxis{ih} = dQmdxi;
+
+        dQvdws{ih} = dQvdw;
+        dQvdxis{ih} = dQvdxi;
+
+        %% Transform
+        hisf = hstart+(1:Npts*Nwc);
+        his = hstart+unused_eqis;
+        Amatr{ih, 1} = Amat(his,hisf)*Qms{ih};
+        Amatr{ih, 2} = dAmatdw(his,hisf)*Qms{ih}+Amat(his,hisf)*dQmdws{ih};
+        Amatr{ih, 3} = dAmatdxi(his,hisf)*Qms{ih}+Amat(his,hisf)*dQmdxis{ih};
+        
+        Fvr{ih, 1} = Fv(his) - Amat(his,hisf)*Qvs{ih};
+        Fvr{ih, 2} = dFvdw(his)-dAmatdw(his,hisf)*Qvs{ih}-Amat(his,hisf)*dQvdws{ih};
+        Fvr{ih, 3} = dFvdxi(his)-dAmatdxi(his,hisf)*Qvs{ih}-Amat(his,hisf)*dQvdxis{ih};
+
+        for i=1:length(JEV)
+            nd = size(JEV.Lj, 1)/Nh;
+            hisn = (ih-1)*nd+(1:nd);
+            
+            Ljr{i}{ih} = JEV.Lj(hisn,hisf)*Qms{ih};
+            dLjdwr{i}{ih} = JEV.dLjdw(hisn,hisf)*Qms{ih} + JEV.Lj(hisn,hisf)*dQmdws{ih};
+            dLjdxir{i}{ih} = JEV.dLjdxi(hisn,hisf)*Qms{ih} + JEV.Lj(hisn,hisf)*dQmdxis{ih};
+
+            Ljvr{i}{ih} = JEV.Lj(hisn,hisf)*Qvs{ih};
+            dLjvdwr{i}{ih} = JEV.dLjdw(hisn,hisf)*Qvs{ih} + JEV.Lj(hisn,hisf)*dQvdws{ih};
+            dLjvdxir{i}{ih} = JEV.dLjdxi(hisn,hisf)*Qvs{ih} + JEV.Lj(hisn,hisf)*dQvdxis{ih};
+
+            nf = size(JEV.Gj, 2)/Nh;
+            hisn = (ih-1)*nf+(1:nf);
+            
+            Gjr{i}{ih} = JEV.Gj(his, hisn);
+            dGjdwr{i}{ih} = JEV.dGjdw(his, hisn);
+            dGjdxir{i}{ih} = JEV.dGjdxi(his, hisn);
+        end
+
+        if any(h(ih,:)~=0) && ~isempty(varargin)
+            if strcmp(varargin{1}, 'r')
+                tmp = cat(2, Qms{ih}, 1j*Qms{ih});
+                Qms{ih} = cat(1, real(tmp), imag(tmp));
+
+                tmp = cat(2, dQmdws{ih}, 1j*dQmdws{ih});
+                dQmdws{ih} = cat(1, real(tmp), imag(tmp));
+
+                tmp = cat(2, dQmdxis{ih}, 1j*dQmdxis{ih});
+                dQmdxis{ih} = cat(1, real(tmp), imag(tmp));
+
+                Qvs{ih} = cat(1, real(Qvs{ih}), imag(Qvs{ih}));
+                dQvdws{ih} = cat(1, real(dQvdws{ih}), imag(dQvdws{ih}));
+                dQvdxis{ih} = cat(1, real(dQvdxis{ih}), imag(dQvdxis{ih}));
+            
+                for i=1:3
+                    tmp = cat(2, Amatr{ih, i}, 1j*Amatr{ih, i});
+                    Amatr{ih, i} = cat(1, real(tmp), imag(tmp));
+                    
+                    Fvr{ih, i} = cat(1, real(Fvr{ih, i}), imag(Fvr{ih, i}));
+                end
+                for i=1:length(JEV)
+                    tmp = cat(2, Ljr{i}{ih}, 1j*Ljr{i}{ih});
+                    Ljr{i}{ih} = cat(1, real(tmp), imag(tmp));
+                    
+                    tmp = cat(2, dLjdwr{i}{ih}, 1j*dLjdwr{i}{ih});
+                    dLjdwr{i}{ih} = cat(1, real(tmp), imag(tmp));
+                    
+                    tmp = cat(2, dLjdxir{i}{ih}, 1j*dLjdxir{i}{ih});
+                    dLjdxir{i}{ih} = cat(1, real(tmp), imag(tmp));
+                    
+                    Ljvr{i}{ih} = cat(1, real(Ljvr{i}{ih}), imag(Ljvr{i}{ih}));
+                    dLjvdwr{i}{ih} = cat(1, real(dLjvdwr{i}{ih}), imag(dLjvdwr{i}{ih}));
+                    dLjvdxir{i}{ih} = cat(1, real(dLjvdxir{i}{ih}), imag(dLjvdxir{i}{ih}));
+                    
+                    tmp = cat(2, Gjr{i}{ih}, 1j*Gjr{i}{ih});
+                    Gjr{i}{ih} = cat(1, real(tmp), imag(tmp));
+                    
+                    tmp = cat(2, dGjdwr{i}{ih}, 1j*dGjdwr{i}{ih});
+                    dGjdwr{i}{ih} = cat(1, real(tmp), imag(tmp));
+                    
+                    tmp = cat(2, dGjdxir{i}{ih}, 1j*dGjdxir{i}{ih});
+                    dGjdxir{i}{ih} = cat(1, real(tmp), imag(tmp));
                 end
             end
-        end
-        dRhdw = reshape(dRhdw, Npts*Nwc, Npcs*Nwc, Nc);
-        dRhdxi = reshape(dRhdxi, Npts*Nwc, Npcs*Nwc, Npar);
-        
-        hinds = hstart_pc + (1:Npcs*Nwc);
-        % 2. Boundary Conditions
-        nofs = 0;
-        for n=1:length(bcs)
-            nofs = [0 bcs.nof];
-
-            inds = hstart_pt*0 + (bcs(n).i-1)*Nwc+(1:Nwc);
-            
-            % RESTRICT THE COLUMNS OF THESE EQNS TO THE CURRENT HARMONIC ONLY.
-            Amat(hstart_pc+sum(nofs(1:n))+(1:nofs(n+1)), hinds) = bcs(n).cofs(h(ih, :)*wxi(1:Nc), wxi(Nc+(1:Npar)))*Rh(inds,hinds-hstart_pc);
-            dAmatdw(hstart_pc+sum(nofs(1:n))+(1:nofs(n+1)), hinds, :) = bcs(n).dcofsdw(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*Rh(inds,hinds-hstart_pc).*permute(h(ih,:),[1 3 2]) + ...
-                reshape(cell2mat(arrayfun(@(a) bcs(n).cofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*dRhdw(inds,hinds-hstart_pc,a), 1:Nc, 'UniformOutput', false)), nofs(n+1), Npcs*Nwc, Nc);
-            dAmatdxi(hstart_pc+sum(nofs(1:n))+(1:nofs(n+1)), hinds, :) = bcs(n).dcofsdxi(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*Rh(inds,hinds-hstart_pc) + ...  %%%%
-                reshape(cell2mat(arrayfun(@(a) bcs(n).cofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*dRhdxi(inds,hinds-hstart_pc,a), 1:Npar, 'UniformOutput', false)), nofs(n+1), Npcs*Nwc, Npar);
-
-            Fv(hstart_pc+sum(nofs(1:n))+(1:nofs(n+1))) = bcs(n).cofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*Ri(inds);
-            dFvdw(hstart_pc+sum(nofs(1:n))+(1:nofs(n+1)),:) = bcs(n).dcofsdw(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*Ri(inds).*h(ih,:) + ...
-                bcs(n).cofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*dRidw(inds,:);
-            dFvdxi(hstart_pc+sum(nofs(1:n))+(1:nofs(n+1)),:) = bcs(n).dcofsdxi(h(ih, :)*wxi(1:Nc), wxi(Nc+(1:Npar)))*Ri(inds) + ...
-                bcs(n).cofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*dRidxi(inds, :);
-
-            % RHS
-            if ~isempty(bcs(n).rih) && all(bcs(n).rih==h(ih,:))
-                Fv(hstart_pc+sum(nofs(1:n))+(1:nofs(n+1))) = Fv(hstart_pc+sum(nofs(1:n))+(1:nofs(n+1))) + bcs(n).rhs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));
-                dFvdw(hstart_pc+sum(nofs(1:n))+(1:nofs(n+1)),:) = dFvdw(hstart_pc+sum(nofs(1:n))+(1:nofs(n+1)),:) + bcs(n).drhsdw(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar))).*h(ih,:);
-                dFvdxi(hstart_pc+sum(nofs(1:n))+(1:nofs(n+1)),:) = dFvdxi(hstart_pc+sum(nofs(1:n))+(1:nofs(n+1)),:) + bcs(n).drhsdxi(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));
-            end
-        end
-
-        % 3. Joints
-        ktn = hstart_pc + sum(nofs);
-        for n=1:length(joints)
-            nofs = [0 joints.nof];
-            switch joints(n).type
-                case {1, 2}  % Binary Connection
-                    inds = hstart_pt*0 + [(joints(n).i-1)*Nwc+(1:Nwc) (joints(n).j-1)*Nwc+(1:Nwc)];
-                otherwise
-                    inds = hstart_pt*0 + cell2mat(arrayfun(@(i) (i-1)*Nwc+(1:Nwc), joints(n).is, 'UniformOutput', false));
-            end
-
-            % RESTRICT THE COLUMNS OF THESE EQNS TO THE CURRENT HARMONIC ONLY.
-            Amat(ktn+sum(nofs(1:n))+(1:nofs(n+1)), hinds) = joints(n).cofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*Rh(inds,hinds-hstart_pc);
-            dAmatdw(ktn+sum(nofs(1:n))+(1:nofs(n+1)), hinds, :) = joints(n).dcofsdw(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*Rh(inds,hinds-hstart_pc).*permute(h(ih,:),[1 3 2]) + ...
-                reshape(cell2mat(arrayfun(@(a) joints(n).cofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*dRhdw(inds,hinds-hstart_pc,a), 1:Nc, 'UniformOutput',false)), nofs(n+1), Npcs*Nwc, Nc);
-            dAmatdxi(ktn+sum(nofs(1:n))+(1:nofs(n+1)), hinds, :) = joints(n).dcofsdxi(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*Rh(inds,hinds-hstart_pc) + ...  %%%%
-                reshape(cell2mat(arrayfun(@(a) joints(n).cofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*dRhdxi(inds,hinds-hstart_pc,a), 1:Npar, 'UniformOutput', false)), nofs(n+1), Npcs*Nwc, Npar);
-
-            Fv(ktn+sum(nofs(1:n))+(1:nofs(n+1))) = joints(n).cofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*Ri(inds);
-            dFvdw(ktn+sum(nofs(1:n))+(1:nofs(n+1)),:) = joints(n).dcofsdw(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*Ri(inds).*h(ih,:) + ...
-                joints(n).cofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*dRidw(inds,:);
-            dFvdxi(ktn+sum(nofs(1:n))+(1:nofs(n+1))) = joints(n).dcofsdxi(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*Ri(inds) + ...
-                joints(n).cofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*dRidxi(inds,:);
-        end
-        % 3a. Nonlinear Joints
-        for n=1:nnl
-            k = nlis(n);
-            nld = joints(k).nld;
-
-            switch joints(k).type
-                case 2  
-                    % Choosing NL displacement
-                    inds = hstart_pt*0 + [(joints(k).i-1)*Nwc+(1:Nwc) (joints(k).j-1)*Nwc+(1:Nwc)];
-                otherwise
-                    inds = hstart_pt*0 + cell2mat(arrayfun(@(i) (i-1)*Nwc+(1:Nwc), joints(k).is, 'UniformOutput', false));
-            end
-            Lj{n}((ih-1)*nld+(1:nld), hinds) = joints(k).nldcofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*Rh(inds,hinds-hstart_pc);
-            dLjdw{n}((ih-1)*nld+(1:nld), hinds, :) = joints(k).dnldcofsdw(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*Rh(inds,hinds-hstart_pc).*permute(h(ih,:), [1 3 2]) + ...
-                reshape(cell2mat(arrayfun(@(a) joints(k).nldcofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*dRhdw(inds,hinds-hstart_pc,a), 1:Nc, 'UniformOutput', false)), nld, Npcs*Nwc, Nc);
-            dLjdxi{n}((ih-1)*nld+(1:nld), hinds, :) = joints(k).dnldcofsdxi(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*Rh(inds,hinds-hstart_pc) + ...  %%%%
-                reshape(cell2mat(arrayfun(@(a) joints(k).nldcofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*dRhdxi(inds,hinds-hstart_pc,a), 1:Npar, 'UniformOutput', false)), nld, Npcs*Nwc, Npar);
-
-            LjR{n}((ih-1)*nld+(1:nld)) = joints(k).nldcofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*Ri(inds);
-            dLjRdw{n}((ih-1)*nld+(1:nld),:) = joints(k).dnldcofsdw(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*Ri(inds).*h(ih,:) + ...
-                joints(k).nldcofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*dRidw(inds,:);
-            dLjRdxi{n}((ih-1)*nld+(1:nld),:) = joints(k).dnldcofsdxi(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*Ri(inds) + ...
-                joints(k).nldcofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*dRidxi(inds,:);
-
-            % Putting NL Force
-            kinds = ktn+sum(nofs(1:k))+(1:nofs(k+1));
-%             kinds = ktn+(k-1)*Nwc+(1:Nwc);            
-
-            Gj{n}(kinds, (ih-1)*nld+(1:nld)) = joints(k).nlfcofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));
-            dGjdw{n}(kinds, (ih-1)*nld+(1:nld), :) = joints(k).dnlfcofsdw(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar))).*permute(h(ih,:), [1 3 2]);
-            dGjdxi{n}(kinds, (ih-1)*nld+(1:nld), :) = joints(k).dnlfcofsdxi(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));            
-
-            if ~isempty(joints(k).rih) && all(joints(k).rih==h(ih,:))
-                Fv(kinds) = Fv(kinds) + joints(k).rhs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));
-                dFvdw(kinds,:) = dFvdw(kinds,:) + joints(k).drhsdw(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar))).*h(ih,:);
-                dFvdxi(kinds,:) = dFvdxi(kinds,:) + joints(k).drhsdxi(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));
-            end
-        end
+        end            
     end
-    JEV = struct('Lj', Lj, 'dLjdw', dLjdw, 'dLjdxi', dLjdxi, ...
-        'LjR', LjR, 'dLjRdw', dLjRdw, 'dLjRdxi', dLjRdxi, ...
-        'Gj', Gj, 'dGjdw', dGjdw, 'dGjdxi', dGjdxi);
-
-    %% Convert to Fully Real Representation
-    if length(varargin)>=1 && varargin{1}=='r'
-        Nhc = sum(all(h==0, 2)+2*any(h~=0, 2));
-        [zinds,hinds,rinds0,rinds,iinds] = HINDS(Npcs*Nwc, h);
-
-        Amatc = Amat;
-        dAmatdwc = dAmatdw;
-        dAmatdxic = dAmatdxi;
     
-        Amat = zeros(Npcs*Nwc*Nhc);
-        dAmatdw = zeros(Npcs*Nwc*Nhc,Npcs*Nwc*Nhc,Nc);
-        dAmatdxi = zeros(Npcs*Nwc*Nhc,Npcs*Nwc*Nhc,Npar);
-    
-        Amat([rinds iinds], [rinds iinds]) = [real([Amatc(hinds,hinds) 1j*Amatc(hinds,hinds)]);
-            imag([Amatc(hinds,hinds) 1j*Amatc(hinds,hinds)])];
-        Amat(rinds0, rinds0) = real(Amatc(zinds,zinds));
-        dAmatdw([rinds iinds], [rinds iinds], :) = [real([dAmatdwc(hinds,hinds, :) 1j*dAmatdwc(hinds,hinds, :)]);
-            imag([dAmatdwc(hinds,hinds, :) 1j*dAmatdwc(hinds,hinds, :)])];
-        dAmatdw(rinds0, rinds0, :) = real(dAmatdwc(zinds,zinds, :));
-        dAmatdxi([rinds iinds], [rinds iinds], :) = [real([dAmatdxic(hinds,hinds, :) 1j*dAmatdxic(hinds,hinds, :)]);
-            imag([dAmatdxic(hinds,hinds, :) 1j*dAmatdxic(hinds,hinds, :)])];
-        dAmatdxi(rinds0, rinds0, :) = real(dAmatdxic(zinds,zinds, :));
-    
-        Fvc = Fv;
-        dFvdwc = dFvdw;
-        dFvdxic = dFvdxi;
+    dAmatdxir = blkdiag(Amatr{:, 3});
+    dAmatdwr = blkdiag(Amatr{:, 2});
+    Amatr = blkdiag(Amatr{:, 1});
 
-        Fv = zeros(Npcs*Nwc*Nhc,1);
-        dFvdw = zeros(Npcs*Nwc*Nhc,Nc);
-        dFvdxi = zeros(Npcs*Nwc*Nhc,Npar);
-        Fv([rinds0 rinds iinds]) = [real(Fvc(zinds)); real(Fvc(hinds)); imag(Fvc(hinds))];
-        dFvdw([rinds0 rinds iinds], :) = [real(dFvdwc(zinds, :)); real(dFvdwc(hinds, :)); imag(dFvdwc(hinds, :))];
-        dFvdxi([rinds0 rinds iinds], :) = [real(dFvdxic(zinds, :)); real(dFvdxic(hinds, :)); imag(dFvdxic(hinds, :))];
+    dFvdxir = cell2mat(Fvr(:, 3));
+    dFvdwr = cell2mat(Fvr(:, 2));
+    Fvr = cell2mat(Fvr(:, 1));
 
-        % Nonlinear Selector-Projectors
-        JEVc = JEV;
-        JEV = struct('Lj', cell(nnl,1), 'dLjdw', cell(nnl,1), 'dLjdxi', cell(nnl,1), ...
-            'LjR', cell(nnl,1), 'dLjRdw', cell(nnl,1), 'dLjRdxi', cell(nnl,1), ...
-            'Gj', cell(nnl,1), 'dGjdw', cell(nnl,1), 'dGjdxi', cell(nnl,1));
+    for i=1:length(JEV)
+        Ljr{i} = blkdiag(Ljr{i}{:});
+        dLjdwr{i} = blkdiag(dLjdwr{i}{:});
+        dLjdxir{i} = blkdiag(dLjdxir{i}{:});
 
-        for n=1:nnl
-            k = nlis(n);
-            nld = joints(k).nld;
+        Ljvr{i} = cell2mat(Ljvr{i});
+        dLjvdwr{i} = cell2mat(dLjvdwr{i});
+        dLjvdxir{i} = cell2mat(dLjvdxir{i});
 
-            [nlzinds,nlhinds,nlrinds0,nlrinds,nliinds] = HINDS(nld, h);
-            JEV(n).Lj = zeros(nld*Nhc, Npcs*Nwc*Nhc);
-            JEV(n).dLjdw = zeros(nld*Nhc, Npcs*Nwc*Nhc, Nc);
-            JEV(n).dLjdxi = zeros(nld*Nhc, Npcs*Nwc*Nhc, Npar);
-
-            JEV(n).LjR = zeros(nld*Nhc, 1);
-            JEV(n).dLjRdw = zeros(nld*Nhc, Nc);
-            JEV(n).dLjRdxi = zeros(nld*Nhc, Npar);
-            
-            JEV(n).Gj = zeros(Npcs*Nwc*Nhc, nld*Nhc);
-            JEV(n).dGjdw = zeros(Npcs*Nwc*Nhc, nld*Nhc, Nc);
-            JEV(n).dGjdxi = zeros(Npcs*Nwc*Nhc, nld*Nhc, Npar);
-
-            tmp = [JEVc(n).Lj(nlhinds, hinds) 1j*JEVc(n).Lj(nlhinds, hinds)];
-            JEV(n).Lj(nlrinds0, rinds0) = JEVc(n).Lj(nlzinds, zinds);
-            JEV(n).Lj([nlrinds nliinds], [rinds iinds]) = [real(tmp);imag(tmp)];
-            tmp = [JEVc(n).dLjdw(nlhinds, hinds, :) 1j*JEVc(n).dLjdw(nlhinds, hinds, :)];
-            JEV(n).dLjdw(nlrinds0, rinds0, :) = JEVc(n).dLjdw(nlzinds, zinds, :);
-            JEV(n).dLjdw([nlrinds nliinds], [rinds iinds], :) = [real(tmp);imag(tmp)];
-            tmp = [JEVc(n).dLjdxi(nlhinds, hinds, :) 1j*JEVc(n).dLjdxi(nlhinds, hinds, :)];
-            JEV(n).dLjdxi(nlrinds0, rinds0, :) = JEVc(n).dLjdxi(nlzinds, zinds, :);
-            JEV(n).dLjdxi([nlrinds nliinds], [rinds iinds], :) = [real(tmp);imag(tmp)];
-
-            JEV(n).LjR([nlrinds0 nlrinds nliinds]) = [JEVc(n).LjR(nlzinds); real(JEVc(n).LjR(nlhinds)); imag(JEVc(n).LjR(nlhinds))];
-            JEV(n).dLjRdw([nlrinds0 nlrinds nliinds], :) = [JEVc(n).dLjRdw(nlzinds, :); real(JEVc(n).dLjRdw(nlhinds, :)); imag(JEVc(n).dLjRdw(nlhinds, :))];
-            JEV(n).dLjRdxi([nlrinds0 nlrinds nliinds], :) = [JEVc(n).dLjRdxi(nlzinds, :); real(JEVc(n).dLjRdxi(nlhinds, :)); imag(JEVc(n).dLjRdxi(nlhinds, :))];
-
-            tmp = [JEVc(n).Gj(hinds,nlhinds) 1j*JEVc(n).Gj(hinds,nlhinds)];
-            JEV(n).Gj(rinds0,nlrinds0) = JEVc(n).Gj(zinds,nlzinds);
-            JEV(n).Gj([rinds iinds],[nlrinds nliinds]) = [real(tmp);imag(tmp)];
-            tmp = [JEVc(n).dGjdw(hinds,nlhinds, :) 1j*JEVc(n).dGjdw(hinds,nlhinds, :)];
-            JEV(n).dGjdw(rinds0,nlrinds0, :) = JEVc(n).dGjdw(zinds,nlzinds, :);
-            JEV(n).dGjdw([rinds iinds],[nlrinds nliinds], :) = [real(tmp);imag(tmp)];
-            tmp = [JEVc(n).dGjdxi(hinds,nlhinds, :) 1j*JEVc(n).dGjdxi(hinds,nlhinds, :)];
-            JEV(n).dGjdxi(rinds0,nlrinds0, :) = JEVc(n).dGjdxi(zinds,nlzinds, :);
-            JEV(n).dGjdxi([rinds iinds],[nlrinds nliinds], :) = [real(tmp);imag(tmp)];
-        end
+        Gjr{i} = blkdiag(Gjr{i}{:});
+        dGjdwr{i} = blkdiag(dGjdwr{i}{:});
+        dGjdxir{i} = blkdiag(dGjdxir{i}{:});
     end    
+
+    JEVr = struct('Lj', Ljr, 'Ljv', Ljvr, 'dLjdw', dLjdwr, 'dLjdxi', dLjdxir, ...
+                  'dLjvdw', dLjvdwr, 'dLjvdxi', dLjvdxir, 'Gj', Gjr, 'dGjdw', dGjdwr, ...
+                  'dGjdxi', dGjdxir);
+
+    RECOV = struct('Qm', blkdiag(Qms{:}), 'dQmdw', blkdiag(dQmdws{:}), ...
+                   'dQmdxi', blkdiag(dQmdxis{:}), 'Qv', cell2mat(Qvs), ...
+                   'dQvdw', cell2mat(dQvdws), 'dQvdxi', cell2mat(dQvdxis));
 end

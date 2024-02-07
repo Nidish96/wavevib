@@ -1,5 +1,5 @@
-function [R, dRdA, dRdw] = WVHBRESFUNr(Ariw, Famp, h, pcs, bcs, joints, Klib)
-%WVHBRESFUNr returns the residue and Jacobians under Harmonic Balance for
+function [pAmat, RECOV] = WBPERJACFUNr(lams, Ariw, Famp, h, pcs, bcs, joints, Klib)
+%WBPERJACFUNr returns the residue and Jacobians under Harmonic Balance for
 %the Wave-Based Model.
 %       This works for the Quasi-Periodic case.
 %
@@ -29,7 +29,7 @@ function [R, dRdA, dRdw] = WVHBRESFUNr(Ariw, Famp, h, pcs, bcs, joints, Klib)
     
     % Linear Parts
     ws = Ariw(end-Nc+1:end);
-    [Amat, dAmatdw, ~, Fv, dFvdw, ~, JEV] = WVAMATr([ws;0], h, pcs, bcs, joints, Klib, 'r');
+    [Amat, dAmatdw, ~, Fv, dFvdw, ~, JEV, RECOV] = WVAMATr([lams;0], h, pcs, bcs, joints, Klib, 'r');
     Ndofs = size(Amat,1)/Nhc;
 
     % Nonlinearities
@@ -69,7 +69,7 @@ function [R, dRdA, dRdw] = WVHBRESFUNr(Ariw, Famp, h, pcs, bcs, joints, Klib)
     end
 
     % Setup Residue
-    R = Amat*Ariw(1:end-Nc) + FNL - Fv*Famp;
-    dRdA = Amat + dFNLdA;
-    dRdw = cell2mat(arrayfun(@(a) dAmatdw(:, :, a)*Ariw(1:end-Nc), 1:Nc, 'UniformOutput', false)) + dFNLdw - dFvdw*Famp;
+    % R = Amat*Ariw(1:end-Nc) + FNL - Fv*Famp;
+    pAmat = Amat + dFNLdA;
+    % dRdw = cell2mat(arrayfun(@(a) dAmatdw(:, :, a)*Ariw(1:end-Nc), 1:Nc, 'UniformOutput', false)) + dFNLdw - dFvdw*Famp;
 end
