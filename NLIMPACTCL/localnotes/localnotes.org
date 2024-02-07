@@ -1,0 +1,54 @@
+#+title: Local Notes
+#+options: h:1 num:t toc:nil
+#+startup: latexpreview
+#+latex_header: \usepackage{booktabs}
+#+latex_header: \usepackage{cleveref}
+#+latex_header: \usepackage{svg}
+#+latex_header: \usepackage[margin=1in]{geometry}
+
+* Local Tasks
+** TODO Nonparametric Joint Scattering Estimation
+ Location: [[file:~/Documents/Research/wavevib/NLIMPACTCL/e6_scatterel.m::%% Estimations of joint scattering]]
+ [[edraw:data=H4sIAI22Y2UAA8VWW5OaMBT+K5n40k65JMi1Iz70qQ+7z728oYRLRbITorj99T0hICprd23tdEaBkJzvku+ALpp9jg7bqm5iXEj59NG227a12rnFRW47hBAbVmDUlqksYhw4BKOClXkhY0xdGOyZaEpew8iieLlIWdagMo0xS0XSmmoId7eJ2DBxft8kZiIEbzHSs180gz+MP/cscGNfsvYTP8SYIIKo+mAkWPY1xl538a274KJkNRQkO8kxaqTgGxbjmtcMo6ysqhjPwA6oeUpkgUDKIzGo5SFihHAMLGJ43zGylwtbC7gim/532VTrplq4Y3kT4bba9+VCsLW8npwShtFzd+yJsiy7lDCaXyXrTS74rk47svx0iqfPuOfT5WZP64x4qwoARg1KwrDI10L8qFOllAqtSxxO5aWppn4Tz2nNOdrrClw1dZXopc26MOeM0KFGDjTyfGrOHqMdsPXWnxO7I9ksiqKzukcnJAY8rH9eH0RGGD3MqTq9FUW15RHllWWniIrQJUQRwkZ3hAOKbmCT1bBmJ6p3s8nr4r2uh300KAUAwPFuVizZQaKM19Js+8BWvEq7nCJX5+SFY9CqSpWYSb0uuIjxtkzTSj2fCqIpfwI2DfthlmzLCoCapG7Mhokyw8sfvKzlwlYYtxiddF739PsQdfTQJf6i8ctkeqpGJkJOyOh1st8HqGR4QSfDC24M8EYq1STg2PO143/rS5GBL88/+uqaBQJ1aNcZNBg7w3Gcv+yM5MPQFgONp2kcf35PGvOSRkGqN50yeTea1dSN/qHxXHJPmqMbO4cv/EFZ/gJ9HQE/yAgAAA==]]
+ + Scattering across the joint is taken to be governed by
+   \begin{equation}
+     \begin{bmatrix} a^-\\ b^+\end{bmatrix} =
+     \begin{bmatrix} \mathbf{r} & \mathbf{t}\\
+       \mathbf{t} & \mathbf{r} \end{bmatrix}
+     \begin{bmatrix} a^+\\ b^-\end{bmatrix}.
+     \label{eq:scat1}
+   \end{equation}
+ + This relates the incoming wave coefficients (left-incoming, $a^+$ and right-incoming, $b^-$) to the outgoing wave coefficients (left-outgoing, $a^-$ and right-outgoing, $b^+$)
+ + Since the scattering matrix exhibits directional equivalence, this can be rewritten as
+   \begin{equation}
+     \begin{bmatrix} a^- & b^+ \end{bmatrix} =
+     \begin{bmatrix} \mathbf{r} & \mathbf{t} \end{bmatrix}
+     \begin{bmatrix} a^+ & b^-\\ b^- & a^+ \end{bmatrix}
+     \label{eq:scat2}
+   \end{equation}
+ + In a practical setting, when all the wave-coefficients $a^{\pm}$ & $b^{\pm}$ are known/measured, [[cref:eq:scat2]] can be solved to yield,
+   \begin{equation}
+     \begin{bmatrix} \mathbf{r}\\ \mathbf{t} \end{bmatrix} =
+     \frac{1}{{b^-}^2-{a^+}^2} \begin{bmatrix} b^-\cdot b^+ - a^-\cdot a^+\\
+       a^-\cdot b^- - a^+\cdot b^+ \end{bmatrix}
+     \label{eq:linscat}
+   \end{equation}
+ + The Euler-Bernoulli beam has harmonic as well as evanescent wave components. We denote these using the subscripts $(\cdot)_h$ & $(\cdot)_e$ respectively. The scattering relationship is,
+   \begin{equation}
+     \left[
+       \begin{array}{c}
+         a_h^-\\ a_e^-\\ \midrule b_h^+\\ b_e^+
+       \end{array}\right] = \left[
+       \begin{array}{cc|cc}
+         r_{hh} & r_{he} & t_{hh} & t_{he}\\
+         r_{eh} & r_{ee} & t_{eh} & t_{ee}\\
+         \midrule
+         t_{hh} & t_{he} & r_{hh} & r_{he}\\
+         t_{eh} & t_{ee} & r_{eh} & r_{ee}
+       \end{array}
+     \right] \left[
+       \begin{array}{c}
+         a_h^+\\ a_e^+\\ \midrule b_h^-\\ b_e^-
+       \end{array}\right]
+   \end{equation}
+ + There are eight unknown scattering coefficients ($r/t_{h/e,h/e}$) but only four equations in the above.

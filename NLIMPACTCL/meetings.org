@@ -1,0 +1,35 @@
+#+title: Meeting Notes
+
+
+* <2024-01-04 Thu>
+** Contributions?
++ One Option
+  + We have a toolbox that is available.
+  + Use the COCO paper.
+  + Choose at least 2, perhaps 3 examples.
+  + Plot: Accuracy vs Effort.
+  + Title: Comparing the Wave Based Method 
++ Another option
+  + Comparison of FEM and WBM in terms of effort, accuracy, etc.
+  + Studying problems that haven't been studied using the WB method as yet in the literature
++ Another
+  + Make vibro-impact as the theme
+  + Come up with an example with buildings so that we have a frame structure?
+  + 2-story building
++ Gap: Stability approach for secondary Hopf.
++ Examples: Impacting Beams, Rotor Dynamics, Frame problem, etc.
+** Results?
++ Improve table 3.
++ Plot of error versus solver effort
+** Steps
++ Solve linear harmonically forced system with "rigid" joints. Harmonically forced. Compute FRF and validate with Prof. Leamy's code.
+  [[edraw:data=H4sIAJfUlmUAA62S246DIBCGX4VMb7dy0G3WRnyC9iHcgki00CBb7NsXq6Z7TDbdvWAmMDPf/4dM0Z8VClr4hsPzhgBqpFaN55CxeDlL12trONCEAhqOnek5NN6fthiHEJKQJtYpzAghOILmlu3QadN+10jzPMe3KpSFkwf/s/TAIcbLLda66zis6roG1HtnW8nBWCMBacFBCleF9Wt1aJWzb0YAwmWh3pesuCx6iwbLIncWZ5MQnWXp6MWND2MepjxbEEJ8toB/T07Z38h3MH35X89fyexh8qnyDYqfv6cZeUo3ZBfXY8zL2NQ4ja1n1ezOWcUd+chJp/ldPI9wsIonbmd5BSzkjoTsAgAA]]
++ Analyze impacting two-story problem motivated from literature. Stability as well.
++ Contributions:
+  1. Extending WBV to Timoshenko beams with axial extension (above & beyond what Chouvion did).
+  2. Opens anaysis of frames.
+  3. Open-source toolbox that does most of the work, with stability. Graph adjacency approach. 
++ Results
+  1. Analysis of vibro-impact systems using WBV approach.
+  2. Convergence vs FE for earlier impacting problem.
+  

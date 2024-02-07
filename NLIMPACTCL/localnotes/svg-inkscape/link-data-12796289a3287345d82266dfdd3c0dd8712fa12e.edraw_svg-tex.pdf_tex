@@ -1,0 +1,64 @@
+%% Creator: Inkscape 1.3 (1:1.3+202307231459+0e150ed6c4), www.inkscape.org
+%% PDF/EPS/PS + LaTeX output extension by Johan Engelen, 2010
+%% Accompanies image file 'link-data-12796289a3287345d82266dfdd3c0dd8712fa12e.edraw_svg-tex.pdf' (pdf, eps, ps)
+%%
+%% To include the image in your LaTeX document, write
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics{<filename>.pdf}
+%% To scale the image, write
+%%   \def\svgwidth{<desired width>}
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics[width=<desired width>]{<filename>.pdf}
+%%
+%% Images with a different path to the parent latex file can
+%% be accessed with the `import' package (which may need to be
+%% installed) using
+%%   \usepackage{import}
+%% in the preamble, and then including the image with
+%%   \import{<path to file>}{<filename>.pdf_tex}
+%% Alternatively, one can specify
+%%   \graphicspath{{<path to file>/}}
+%% 
+%% For more information, please see info/svg-inkscape on CTAN:
+%%   http://tug.ctan.org/tex-archive/info/svg-inkscape
+%%
+\begingroup%
+  \makeatletter%
+  \providecommand\color[2][]{%
+    \errmessage{(Inkscape) Color is used for the text in Inkscape, but the package 'color.sty' is not loaded}%
+    \renewcommand\color[2][]{}%
+  }%
+  \providecommand\transparent[1]{%
+    \errmessage{(Inkscape) Transparency is used (non-zero) for the text in Inkscape, but the package 'transparent.sty' is not loaded}%
+    \renewcommand\transparent[1]{}%
+  }%
+  \providecommand\rotatebox[2]{#2}%
+  \newcommand*\fsize{\dimexpr\f@size pt\relax}%
+  \newcommand*\lineheight[1]{\fontsize{\fsize}{#1\fsize}\selectfont}%
+  \ifx\svgwidth\undefined%
+    \setlength{\unitlength}{540bp}%
+    \ifx\svgscale\undefined%
+      \relax%
+    \else%
+      \setlength{\unitlength}{\unitlength * \real{\svgscale}}%
+    \fi%
+  \else%
+    \setlength{\unitlength}{\svgwidth}%
+  \fi%
+  \global\let\svgwidth\undefined%
+  \global\let\svgscale\undefined%
+  \makeatother%
+  \begin{picture}(1,0.27777778)%
+    \lineheight{1}%
+    \setlength\tabcolsep{0pt}%
+    \put(0,0){\includegraphics[width=\unitlength,page=1]{link-data-12796289a3287345d82266dfdd3c0dd8712fa12e.edraw_svg-tex.pdf}}%
+    \put(0.49722222,0.14722222){\color[rgb]{1,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}\textbf{joint}\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=2]{link-data-12796289a3287345d82266dfdd3c0dd8712fa12e.edraw_svg-tex.pdf}}%
+    \put(0.24722222,0.24861111){\color[rgb]{0.13333333,0.13333333,0.13333333}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}a+\end{tabular}}}}%
+    \put(0.36527778,0.20694444){\color[rgb]{0.13333333,0.13333333,0.13333333}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}a-\end{tabular}}}}%
+    \put(0.63472222,0.24722222){\color[rgb]{0.13333333,0.13333333,0.13333333}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}b+\end{tabular}}}}%
+    \put(0.75,0.20833333){\color[rgb]{0.13333333,0.13333333,0.13333333}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}b-\end{tabular}}}}%
+  \end{picture}%
+\endgroup%

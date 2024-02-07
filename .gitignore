@@ -17,4 +17,12 @@
 /EXAMPLES/DATS/
 *.mat
 /NLIMPACTCL/FIGS/*.png
-/NLIMPACTCL/*
+/NLIMPACTCL/FIGS/*.eps
+/NLIMPACTCL/VIDS/
+*/ltximg/
+*/auto/
+*/_minted-localnotes/
+/NLIMPACTCL/localnotes/ltximg/
+/NLIMPACTCL/localnotes/localnotes.tex
+/NLIMPACTCL/localnotes/localnotes.pdf
+/NLIMPACTCL/localnotes/localnotes.html
