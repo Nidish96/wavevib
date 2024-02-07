@@ -1,5 +1,5 @@
 function [R, dRdA, dRdw] = WVHBRESFUN(Ariw, Famp, h, pcs, bcs, joints, Klib)
-%WVHBRESFUNQP returns the residue and Jacobians under Harmonic Balance for
+%WVHBRESFUN returns the residue and Jacobians under Harmonic Balance for
 %the Wave-Based Model.
 %       This works for the Quasi-Periodic case.
 %
@@ -22,10 +22,11 @@ function [R, dRdA, dRdw] = WVHBRESFUN(Ariw, Famp, h, pcs, bcs, joints, Klib)
 %       dRdw    : (Npts*Nwc*Nhc,Nc) Jacobian wrt frequency
 
     Nwc = size(pcs(1).wcomps,1);
+    assert(all(arrayfun(@(p) size(p.wcomps,1), pcs(2:end))==Nwc));
     Npts = pcs(end).irange(end);
     Nhc = sum(all(h==0, 2)+2*any(h~=0, 2));
-    Nc = length(Ariw)-(Npts*Nwc*Nhc);
-
+    Nc = size(h,2);
+    
     % Linear Parts
     ws = Ariw(end-Nc+1:end);
     [Amat, dAmatdw, ~, Fv, dFvdw, ~, JEV] = WVAMAT([ws;0], h, pcs, bcs, joints, Klib, 'r');
@@ -45,11 +46,11 @@ function [R, dRdA, dRdw] = WVHBRESFUN(Ariw, Famp, h, pcs, bcs, joints, Klib)
 
         nfnl = size(JEV(i).Gj,2)/Nhc;
         Fsc = 1/2*ones(nfnl*Nhc,1);
-        Usc = 2*ones(joints(i).nld*Nhc,1);
+        Usc = 2*ones(joints(k).nld*Nhc,1);
         if sum(all(h==0,2))~=0
             assert(all(h(1,:)==0))
             Fsc(1:nfnl) = 2*Fsc(1:nfnl);
-            Usc(1:joints(i).nld) = Usc(1:joints(i).nld)/2;
+            Usc(1:joints(k).nld) = Usc(1:joints(k).nld)/2;
         end
         
         [Fnlk, dFnldUk, dFnldwk] = joints(k).nl([Usc.*U; ws]);

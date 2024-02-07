@@ -17,7 +17,7 @@ set(0,'defaultAxesFontSize',13)
 
 savfig = false;
 animfig = false;
-savdat = true;
+savdat = false;
 analyze = true;
 %% Setup Model
 Ey = 2.1e11;
@@ -107,7 +107,7 @@ Nhc = sum((h==0)+2*(h~=0));
 Wst = 2*pi*4;
 Wen = 2*pi*12;
 dw = 0.75;
-dww = [0.75 0.5 0.75 0.75];
+dww = [0.75 0.5 0.5 0.75];
 
 Copt = struct('Nmax', 2000, 'angopt', 5e-2, 'DynDscale', 1);
 % Copt = struct('Nmax', 2000, 'angopt', 5e-2, 'DynDscale', 1, 'solverchoice', 3);
@@ -122,11 +122,11 @@ if analyze
         ari0 = Amat\(Fv*Famps(fi));
 
         switch fi
-          case {3, 4}
+          case 4
             Copt.solverchoice = 3;
           case 2
             Copt.solverchoice = 2;
-          case 1
+          case {1, 3}
             Copt.solverchoice = 1;
         end
         Copt.Dscale = [1e-6*ones(size(ari0));Wst];
@@ -180,12 +180,12 @@ end
 %     ariwC([rinds0 rinds iinds end],:) = [acC{fi}(zinds,:); real(acC{fi}(hinds,:)); imag(acC{fi}(hinds,:)); acC{fi}(end,:)];
 %     for wi=1:size(ariwC,2)
 %         W = ariwC(end, wi);
-        
+
 %         % pAmat = WBPERJACFUN(W, ariwC(:, wi), Famps(fi), h, pcs, bcs, joints, Klib);
 %         joints.nl = @(Uw) HCONTACT(Uw, knl, gap, h, Nt);
 %         pAmat = WBPERJACFUN(W, ariwC(:, wi), ...
 %                             Famps(fi), h, pcs, bcs, joints, Klib);
-        
+
 %         % % Use only non-zero harmonics
 %         % joints.nl = @(Uw) HCONTACT(Uw, knl, gap, h(h~=0), Nt);
 %         % pAmat = WBPERJACFUN(W, ariwC(Npts*Nwc+1:end, wi), ...

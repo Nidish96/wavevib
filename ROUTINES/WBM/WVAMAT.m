@@ -8,9 +8,8 @@ function [Amat, dAmatdw, dAmatdxi, Fv, dFvdw, dFvdxi, JEV] = WVAMAT(wxi, h, pcs,
 %   incommensurate frequency components).
 %
 %   USAGE:
-%       [Amat, dAmatdw, dAmatdxi, Fv, dFvdw, dFvdxi, JEV] = WVAMAT(wxi, h, pcs, bcs, joints, Klib);
-%           (OR)
-%       [Amat, dAmatdw, dAmatdxi, Fv, dFvdw, dFvdxi, JEV] = WVAMAT(wxi, h, pcs, bcs, joints, Klib, 'r');
+%       [Amat, dAmatdw, dAmatdxi, Fv, dFvdw, dFvdxi, JEV] = WVAMAT(wxi, h, pcs, bcs,
+%				    joints, Klib, [opt]'r');
 %   INPUTS:
 %       wxi     : (Nc+Npar,1) vector of (frequencies,parameter)
 %                   [w1;w2;...;xi1;x2;...]
@@ -58,6 +57,7 @@ function [Amat, dAmatdw, dAmatdxi, Fv, dFvdw, dFvdxi, JEV] = WVAMAT(wxi, h, pcs,
 
     Npts = pcs(end).irange(end);
     Nwc  = size(pcs(1).wcomps,1);  % Number of wave components
+    assert(all(arrayfun(@(p) size(p.wcomps,1), pcs(2:end))==Nwc));
     Nh   = size(h,1);  % Number of harmonic terms
     Nc   = size(h,2);  % Number of incommensurate frequency components
     Npar = length(wxi)-Nc;  % Number of free parameters (xis)
@@ -69,7 +69,7 @@ function [Amat, dAmatdw, dAmatdxi, Fv, dFvdw, dFvdxi, JEV] = WVAMAT(wxi, h, pcs,
     dFvdw = zeros(Npts*Nwc*Nh,Nc);
     dFvdxi = zeros(Npts*Nwc*Nh,Npar);
 
-    % Setup Selector-Projectors for Nonlinearities
+    %% Setup Selector-Projectors for Nonlinearities
     nlis = find(arrayfun(@(j) ~isempty(j.nl), joints));
     nnl = length(nlis);
     Lj = cell(nnl,1);
@@ -94,8 +94,8 @@ function [Amat, dAmatdw, dAmatdxi, Fv, dFvdw, dFvdxi, JEV] = WVAMAT(wxi, h, pcs,
     if all(h(1,:)==0)  % First component is the zeroth harmonic
                        % TODO: Figure out how to let the user specify this
                        % without too much intrusion into the workflow.
-                       % \xi dependence is missing for now.
-        % 1. Propagation in Pieces
+                       % \xi dependence is missing for now?
+        %% 1. Propagation in Pieces
         k = 0;
         for i=1:length(pcs)
             for n=1:pcs(i).N-1
@@ -108,15 +108,14 @@ function [Amat, dAmatdw, dAmatdxi, Fv, dFvdw, dFvdxi, JEV] = WVAMAT(wxi, h, pcs,
 
                 ns = (0:Nwc-1);
                 ks = (0:Nwc-1)';
-                % xA = pcs(i).U(n)*pcs(i).S;
-                % xB = pcs(i).U(n)*pcs(i).S;
-                % AA = triu((-1).^(ns-ks).*factorial(ns)./(factorial(max(ns-ks,0)).*factorial(ks)).*(xA.^(ns-ks)));
-                % BB = triu((-1).^(ns-ks).*factorial(ns)./(factorial(max(ns-ks,0)).*factorial(ks)).*(xB.^(ns-ks)));
-                % Amat(si:se, qi:qe) = [AA -BB];
 
-                dx = abs(diff(pcs(i).U(n:n+1))*pcs(i).S);
+                % dx = abs(diff(pcs(i).U(n:n+1))*pcs(i).S);
+                % AA = triu((-1).^(ns-ks).*factorial(ns)./(factorial(max(ns-ks,0)).*factorial(ks)).*(dx.^(ns-ks)));
+                % Amat(si:se, qi:qe) = [eye(Nwc) -AA];
+
+                dx = -abs(diff(pcs(i).U(n:n+1))*pcs(i).S);
                 AA = triu((-1).^(ns-ks).*factorial(ns)./(factorial(max(ns-ks,0)).*factorial(ks)).*(dx.^(ns-ks)));
-                Amat(si:se, qi:qe) = [eye(Nwc) -AA];
+                Amat(si:se, qi:qe) = [AA -eye(Nwc)];
                 
                 % All derivatives are zero
                 
@@ -126,15 +125,19 @@ function [Amat, dAmatdw, dAmatdxi, Fv, dFvdw, dFvdxi, JEV] = WVAMAT(wxi, h, pcs,
                     assert(length(ei)==1);
 
                     if all(pcs(i).excnh(ei,:)==0)  % zeroth harmonic excitation
-                        Fv(si:se) = pcs(i).exccofs0{ei}{1}(wxi(Nc+(1:Npar)));  % (Nwc,1)
-                        % dFvdw is zero
-                        dFvdxi(si:se,:) = pcs(i).exccofs0{ei}{2}(wxi(Nc+(1:Npar)));  % (Nwc,Npar)
+                        if numel(pcs(i).exccofs0{ei})==1
+                            Fv(si:se) = pcs(i).exccofs0{ei};
+                        else
+                            Fv(si:se) = pcs(i).exccofs0{ei}{1}(wxi(Nc+(1:Npar)));  % (Nwc,1)
+                            % dFvdw is zero
+                            dFvdxi(si:se,:) = pcs(i).exccofs0{ei}{2}(wxi(Nc+(1:Npar)));  % (Nwc,Npar)
+                        end
                     end
                 end
             end
         end
         
-        % 2. Boundary Conditions
+        %% 2. Boundary Conditions
         ktn = (Npts-length(pcs))*Nwc;
         nofs = 0;
         for n=1:length(bcs)
@@ -142,23 +145,32 @@ function [Amat, dAmatdw, dAmatdxi, Fv, dFvdw, dFvdxi, JEV] = WVAMAT(wxi, h, pcs,
 
             inds = (bcs(n).i-1)*Nwc+(1:Nwc);
 
-            Amat(ktn+sum(nofs(1:n))+(1:nofs(n+1)), inds) = ...
-                bcs(n).cofs0(wxi(Nc+(1:Npar)));  % (nofs(n+1), Nwc)
-            dAmatdxi(ktn+sum(nofs(1:n))+(1:nofs(n+1)), inds, :) = ...
-                bcs(n).dcofsdxi0(wxi(Nc+(1:Npar)));
+            if isa(bcs(n).cofs0, 'function_handle')
+                Amat(ktn+sum(nofs(1:n))+(1:nofs(n+1)), inds) = ...
+                    bcs(n).cofs0(wxi(Nc+(1:Npar)));  % (nofs(n+1), Nwc)
+                dAmatdxi(ktn+sum(nofs(1:n))+(1:nofs(n+1)), inds, :) = ...
+                    bcs(n).dcofsdxi0(wxi(Nc+(1:Npar)));
+            else
+                Amat(ktn+sum(nofs(1:n))+(1:nofs(n+1)), inds) = bcs(n).cofs0;
+            end
 
             % RHS
             if ~isempty(bcs(n).rih) && all(bcs(n).rih==h(ih,:))
-                Fv(ktn+sum(nofs(1:n))+(1:nofs(n+1))) = ...
-                    Fv(ktn+sum(nofs(1:n))+(1:nofs(n+1))) + ...
-                    bcs(n).rhs0(wxi(Nc+(1:Npar)));
-                dFvdxi(ktn+sum(nofs(1:n))+(1:nofs(n+1)), :) = ...
-                    dFvdxi(ktn+sum(nofs(1:n))+(1:nofs(n+1)), :) + ...
-                    bcs(n).drhsdxi0(wxi(Nc+(1:Npar)));
+                if isa(bcs(n).rhs0, 'function_handle')
+                    Fv(ktn+sum(nofs(1:n))+(1:nofs(n+1))) = ...
+                        Fv(ktn+sum(nofs(1:n))+(1:nofs(n+1))) + ...
+                        bcs(n).rhs0(wxi(Nc+(1:Npar)));
+                    dFvdxi(ktn+sum(nofs(1:n))+(1:nofs(n+1)), :) = ...
+                        dFvdxi(ktn+sum(nofs(1:n))+(1:nofs(n+1)), :) + ...
+                        bcs(n).drhsdxi0(wxi(Nc+(1:Npar)));
+                else
+                    Fv(ktn+sum(nofs(1:n))+(1:nofs(n+1))) = ...
+                        Fv(ktn+sum(nofs(1:n))+(1:nofs(n+1))) + bcs(n).rhs0;
+                end
             end
         end
 
-        % 3. Joints
+        %% 3. Joints
         ktn = (Npts-length(pcs))*Nwc+sum(nofs);
         nofs = 0;
         for n=1:length(joints)
@@ -170,12 +182,16 @@ function [Amat, dAmatdw, dAmatdxi, Fv, dFvdw, dFvdxi, JEV] = WVAMAT(wxi, h, pcs,
                 inds = cell2mat(arrayfun(@(i) (i-1)*Nwc+(1:Nwc), joints(n).is, 'UniformOutput', false));
             end
 
-            Amat(ktn+sum(nofs(1:n))+(1:nofs(n+1)), inds) = ...
-                joints(n).cofs0(wxi(Nc+(1:Npar)));
-            dAmatdxi(ktn+sum(nofs(1:n))+(1:nofs(n+1)), inds, :) = ...
-                joints(n).dcofsdxi0(wxi(Nc+(1:Npar)));
+            if isa(joints(n).cofs0, 'function_handle')
+                Amat(ktn+sum(nofs(1:n))+(1:nofs(n+1)), inds) = ...
+                    joints(n).cofs0(wxi(Nc+(1:Npar)));
+                dAmatdxi(ktn+sum(nofs(1:n))+(1:nofs(n+1)), inds, :) = ...
+                    joints(n).dcofsdxi0(wxi(Nc+(1:Npar)));
+            else
+                Amat(ktn+sum(nofs(1:n))+(1:nofs(n+1)), inds) = joints(n).cofs0;
+            end
         end
-        % 3a. Nonlinear Joints
+        %% 3a. Nonlinear Joints
         for n=1:nnl
             k = nlis(n);
             nld = joints(k).nld;  % Nonlinear Displacements (& forces)
@@ -189,29 +205,42 @@ function [Amat, dAmatdw, dAmatdxi, Fv, dFvdw, dFvdxi, JEV] = WVAMAT(wxi, h, pcs,
                                          'UniformOutput', false));
             end
             % Displacement Selection
-            Lj{n}(1:nld, inds) = joints(k).nldcofs0(wxi(Nc+(1:Npar)));  % (nld,Nwc)
-            dLjdxi{n}(1:nld, inds, :) = joints(k).dnldcofsdxi0(wxi(Nc+(1:Npar)));  % (nld,Nwc,Npars)
+            if isa(joints(k).nldcofs0, 'function_handle')
+                Lj{n}(1:nld, inds) = joints(k).nldcofs0(wxi(Nc+(1:Npar)));  % (nld,Nwc)
+                dLjdxi{n}(1:nld, inds, :) = joints(k).dnldcofsdxi0(wxi(Nc+(1:Npar)));  % (nld,Nwc,Npars)
+            else
+                Lj{n}(1:nld, inds) = joints(k).nldcofs0;  % (nld,Nwc)
+            end
 
             % Force Projection
             kinds = ktn+sum(nofs(1:k))+(1:nofs(k+1));
 
-            Gj{n}(kinds, 1:nld) = joints(k).nlfcofs0(wxi(Nc+(1:Npar)));  %(Nwc,nld)
-            dGjdxi{n}(kinds, 1:nld, :) = joints(k).dnlfcofsdxi0(wxi(Nc+(1:Npar)));  %(Nwc,nld,Npars)
+            if isa(joints(k).nlfcofs0, 'function_handle')
+                Gj{n}(kinds, 1:nld) = joints(k).nlfcofs0(wxi(Nc+(1:Npar)));  %(Nwc,nld)
+                dGjdxi{n}(kinds, 1:nld, :) = joints(k).dnlfcofsdxi0(wxi(Nc+(1:Npar)));  %(Nwc,nld,Npars)
+            else
+                Gj{n}(kinds, 1:nld) = joints(k).nlfcofs0;  %(Nwc,nld)
+            end
             if ~isempty(joints(k).rih) && all(joints(k).rih==0)  % 0th harmonic rhs @ joint
-                Fv(kinds) = Fv(kinds) + joints(k).rhs0(wxi(Nc+(1:Npar)));
-                dFvdxi(kinds) = dFvdxi(kinds) + joints(k).rhs0(wxi(Nc+(1:Npar)));
+                if isa(joints(k).rhs0, 'function_handle')
+                    Fv(kinds) = Fv(kinds) + joints(k).rhs0(wxi(Nc+(1:Npar)));
+                    dFvdxi(kinds) = dFvdxi(kinds) + joints(k).drhsdxi0(wxi(Nc+(1:Npar)));
+                else
+                    Fv(kinds) = Fv(kinds) + joints(k).rhs0;
+                end
             end
         end
         
         i1 = 2;
     end
 
-    
+
+    %% Non-Zero Harmonics
     for ih=i1:Nh
         hstart = (ih-1)*(Npts*Nwc);
         
         k = 0;
-        % 1. Propagation in Pieces
+        %% 1. Propagation in Pieces
         for i=1:length(pcs)
             % Wavenumbers of the different components
             Ks = arrayfun(@(k) k.K(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar))), Klib);  %(nk,1)
@@ -245,39 +274,58 @@ function [Amat, dAmatdw, dAmatdxi, Fv, dFvdw, dFvdxi, JEV] = WVAMAT(wxi, h, pcs,
                     assert(length(ei)==1);
     
                     if all(pcs(i).excnh(ei,:)==h(ih,:))
-                        Fv(si:se) = pcs(i).exccofs{ei}{1}(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  %(Nwc,1)
-                        dFvdw(si:se,:) = pcs(i).exccofs{ei}{2}(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar))).*h(ih,:);  %(Nwc,Nc)
-                        dFvdxi(si:se,:) = pcs(i).exccofs{ei}{3}(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  %(Nwc,Npar)
+                        if numel(pcs(i).exccofs{ei})==1
+                            Fv(si:se) = pcs(i).exccofs{ei};  %(Nwc,1)
+                        else
+                            Fv(si:se) = pcs(i).exccofs{ei}{1}(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  %(Nwc,1)
+                            dFvdw(si:se,:) = pcs(i).exccofs{ei}{2}(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar))).*h(ih,:);  %(Nwc,Nc)
+                            dFvdxi(si:se,:) = pcs(i).exccofs{ei}{3}(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  %(Nwc,Npar)
+                        end
                     end
                 end
             end
         end
         
-        % 2. Boundary Conditions
+        %% 2. Boundary Conditions
         ktn = hstart + (Npts-length(pcs))*Nwc;
         nofs = 0;
         for n=1:length(bcs)
             nofs = [0 bcs.nof];
 
             inds = hstart + (bcs(n).i-1)*Nwc+(1:Nwc);
-    
-            Amat(ktn+sum(nofs(1:n))+(1:nofs(n+1)), inds) = bcs(n).cofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  % (nofs(n+1),Nwc)
-            dAmatdw(ktn+sum(nofs(1:n))+(1:nofs(n+1)), inds, :) = bcs(n).dcofsdw(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar))).*permute(h(ih,:),[1 3 2]);  %(1,Nwc,Nc)
-            dAmatdxi(ktn+sum(nofs(1:n))+(1:nofs(n+1)), inds, :) = bcs(n).dcofsdxi(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  %(1,Nwc,Npar)
 
-%             Amat(ktn+n, inds) = bcs(n).cofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  % (1,1)
-%             dAmatdw(ktn+n, inds, :) = bcs(n).dcofsdw(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar))).*permute(h(ih,:),[1 3 2]);  %(1,Nc)
-%             dAmatdxi(ktn+n, inds, :) = bcs(n).dcofsdxi(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  %(1,Npar)
+            if isa(bcs(n).cofs, 'function_handle')
+                Amat(ktn+sum(nofs(1:n))+(1:nofs(n+1)), inds) = ...
+                    bcs(n).cofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  % (nofs(n+1),Nwc)
+                dAmatdw(ktn+sum(nofs(1:n))+(1:nofs(n+1)), inds, :) = ...
+                    bcs(n).dcofsdw(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar))).*...
+                    permute(h(ih,:),[1 3 2]);  %(1,Nwc,Nc)
+                dAmatdxi(ktn+sum(nofs(1:n))+(1:nofs(n+1)), inds, :) = ...
+                    bcs(n).dcofsdxi(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  %(1,Nwc,Npar)
+            else
+                Amat(ktn+sum(nofs(1:n))+(1:nofs(n+1)), inds) = bcs(n).cofs;  % (nofs(n+1),Nwc)
+            end
 
             % RHS
             if ~isempty(bcs(n).rih) && all(bcs(n).rih==h(ih,:))
-                Fv(ktn+sum(nofs(1:n))+(1:nofs(n+1))) = Fv(ktn+sum(nofs(1:n))+(1:nofs(n+1)))+bcs(n).rhs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));
-                dFvdw(ktn+sum(nofs(1:n))+(1:nofs(n+1)), :) = dFvdw(ktn+sum(nofs(1:n))+(1:nofs(n+1)))+bcs(n).rhs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar))).*h(ih,:);
-                dFvdxi(ktn+sum(nofs(1:n))+(1:nofs(n+1)), :) = dFvdxi(ktn+sum(nofs(1:n))+(1:nofs(n+1)))+bcs(n).rhs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));
+                if isa(bcs(n).rhs, 'function_handle')
+                    Fv(ktn+sum(nofs(1:n))+(1:nofs(n+1))) = ...
+                        Fv(ktn+sum(nofs(1:n))+(1:nofs(n+1))) + ...
+                        bcs(n).rhs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));
+                    dFvdw(ktn+sum(nofs(1:n))+(1:nofs(n+1)), :) = ...
+                        dFvdw(ktn+sum(nofs(1:n))+(1:nofs(n+1))) + ...
+                        bcs(n).rhs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar))).*h(ih,:);
+                    dFvdxi(ktn+sum(nofs(1:n))+(1:nofs(n+1)), :) = ...
+                        dFvdxi(ktn+sum(nofs(1:n))+(1:nofs(n+1))) + ...
+                        bcs(n).rhs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));
+                else
+                    Fv(ktn+sum(nofs(1:n))+(1:nofs(n+1))) = ...
+                        Fv(ktn+sum(nofs(1:n))+(1:nofs(n+1))) + bcs(n).rhs;
+                end
             end
         end
     
-        % 3. Joints
+        %% 3. Joints
         ktn = hstart + (Npts-length(pcs))*Nwc+sum(nofs);
         nofs = 0;
         for n=1:length(joints)
@@ -288,13 +336,26 @@ function [Amat, dAmatdw, dAmatdxi, Fv, dFvdw, dFvdxi, JEV] = WVAMAT(wxi, h, pcs,
                 otherwise
                   inds = hstart + cell2mat(arrayfun(@(i) (i-1)*Nwc+(1:Nwc), joints(n).is, 'UniformOutput', false));
             end
-            
-            Amat(ktn+sum(nofs(1:n))+(1:nofs(n+1)), inds) = joints(n).cofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  % (nofs(n+1),type*Nwc)
-            dAmatdw(ktn+sum(nofs(1:n))+(1:nofs(n+1)), inds, :) = reshape(cell2mat(arrayfun(@(a) joints(n).dcofsdw(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*h(ih,a), ...
-                1:Nc, 'UniformOutput', false)), nofs(n+1), joints(n).type*Nwc, Nc);  % (nofs(n+1),type*Nwc,Nc)
-            dAmatdxi(ktn+sum(nofs(1:n))+(1:nofs(n+1)), inds, :) = joints(n).dcofsdxi(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  %(nofs(n+1),type*Nwc,Npar)
+
+            if isa(joints(n).cofs, 'function_handle')
+                Amat(ktn+sum(nofs(1:n))+(1:nofs(n+1)), inds) = ...
+                    joints(n).cofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  % (nofs(n+1),type*Nwc)
+                dAmatdw(ktn+sum(nofs(1:n))+(1:nofs(n+1)), inds, :) = ...
+                    reshape(...
+                    cell2mat(...
+                    arrayfun(...
+                    @(a) joints(n).dcofsdw(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*h(ih,a), ...
+                    1:Nc, 'UniformOutput', false)), ...
+                    nofs(n+1), joints(n).type*Nwc, Nc);
+                % (nofs(n+1),type*Nwc,Nc)
+                dAmatdxi(ktn+sum(nofs(1:n))+(1:nofs(n+1)), inds, :) = ...
+                    joints(n).dcofsdxi(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));
+                %(nofs(n+1),type*Nwc,Npar)
+            else
+                Amat(ktn+sum(nofs(1:n))+(1:nofs(n+1)), inds) = joints(n).cofs;
+            end
         end
-        % 3a. Nonlinear Joints
+        %% 3a. Nonlinear Joints
         for n=1:nnl
             k = nlis(n);
             nld = joints(k).nld;  % Nonlinear Displacements (& forces)
@@ -306,26 +367,39 @@ function [Amat, dAmatdw, dAmatdxi, Fv, dFvdw, dFvdxi, JEV] = WVAMAT(wxi, h, pcs,
                 otherwise
                     inds = hstart + cell2mat(arrayfun(@(i) (i-1)*Nwc+(1:Nwc), joints(k).is, 'UniformOutput', false));
             end
-            % Displacement Selection
-            Lj{n}((ih-1)*nld+(1:nld), inds) = joints(k).nldcofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  % (nld,Nwc)
-            dLjdw{n}((ih-1)*nld+(1:nld), inds,:) = reshape(cell2mat(arrayfun(@(a) joints(k).dnldcofsdw(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*h(ih,a), ...
-                1:Nc, 'UniformOutput', false)), nld,joints(k).type*Nwc,Nc);  %(nld,type*Nwc,Nc)
-            dLjdxi{n}((ih-1)*nld+(1:nld), inds,:) = joints(k).dnldcofsdxi(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  %(nld,Nwc,Npar)
+            % Displacement Selection            
+            if isa(joints(k).nldcofs, 'function_handle')
+                Lj{n}((ih-1)*nld+(1:nld), inds) = joints(k).nldcofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  % (nld,Nwc)
+                dLjdw{n}((ih-1)*nld+(1:nld), inds,:) = reshape(cell2mat(arrayfun(@(a) joints(k).dnldcofsdw(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*h(ih,a), ...
+                                                                                 1:Nc, 'UniformOutput', false)), nld,joints(k).type*Nwc,Nc);  %(nld,type*Nwc,Nc)
+                dLjdxi{n}((ih-1)*nld+(1:nld), inds,:) = joints(k).dnldcofsdxi(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  %(nld,Nwc,Npar)
+            else
+                Lj{n}((ih-1)*nld+(1:nld), inds) = joints(k).nldcofs;
+            end
 
             % Force Projection
             kinds = ktn+sum(nofs(1:k))+(1:nofs(k+1));
-
-            Gj{n}(kinds, (ih-1)*nld+(1:nld)) = joints(k).nlfcofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  %(Nwc,nld)
-            dGjdw{n}(kinds, (ih-1)*nld+(1:nld),:) = reshape(cell2mat(arrayfun(@(a) joints(k).dnlfcofsdw(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*h(ih,a), ...
-                1:Nc, 'UniformOutput', false)), nofs(k+1),nld,Nc);  %(nofs(k+1),nld,Nc)
-%                     dGjdw{n}(kinds, (ih-1)*nld+(1:nld),:) = reshape(cell2mat(arrayfun(@(a) joints(k).dnlfcofsdw(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*h(ih,a), ...
-%                         1:Nc, 'UniformOutput', false)), Nwc,nld,Nc);  %(Nwc,nld,Nc)
-            dGjdxi{n}(kinds, (ih-1)*nld+(1:nld),:) = joints(k).dnlfcofsdxi(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  %(Nwc,nld,Npars)
+            if isa(joints(k).nlfcofs, 'function_handle')
+                Gj{n}(kinds, (ih-1)*nld+(1:nld)) = joints(k).nlfcofs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  %(Nwc,nld)
+                dGjdw{n}(kinds, (ih-1)*nld+(1:nld),:) = reshape(cell2mat(arrayfun(@(a) joints(k).dnlfcofsdw(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)))*h(ih,a), ...
+                                                                                  1:Nc, 'UniformOutput', false)), nofs(k+1),nld,Nc);  %(nofs(k+1),nld,Nc)
+                dGjdxi{n}(kinds, (ih-1)*nld+(1:nld),:) = joints(k).dnlfcofsdxi(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  %(Nwc,nld,Npars)
+            else
+                Gj{n}(kinds, (ih-1)*nld+(1:nld)) = joints(k).nlfcofs;
+            end
 
             if ~isempty(joints(k).rih) && all(joints(k).rih==h(ih,:))
-                Fv(kinds) = Fv(kinds) + joints(k).rhs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  %(Nwc,1)
-                dFvdw(kinds,:) = dFvdw(kinds,:) + joints(k).drhsdw(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar))).*h(ih,:);  %(Nwc,Nc)
-                dFvdxi(kinds,:) = dFvdxi(kinds,:) + joints(k).drhsdxi(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  % (Nwc,Npar)
+                if isa(joints(k).rhs, 'function_handle')
+                    Fv(kinds) = Fv(kinds) + ...
+                        joints(k).rhs(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  %(Nwc,1)
+                    dFvdw(kinds,:) = dFvdw(kinds,:) + ...
+                        joints(k).drhsdw(h(ih,:)*wxi(1:Nc), ...
+                                         wxi(Nc+(1:Npar))).*h(ih,:);  %(Nwc,Nc)
+                    dFvdxi(kinds,:) = dFvdxi(kinds,:) + ...
+                        joints(k).drhsdxi(h(ih,:)*wxi(1:Nc), wxi(Nc+(1:Npar)));  % (Nwc,Npar)
+                else
+                    Fv(kinds) = Fv(kinds) + joints(k).rhs
+                end
             end
         end
     end

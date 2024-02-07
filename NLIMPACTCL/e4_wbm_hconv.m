@@ -16,10 +16,10 @@ set(0,'defaultAxesFontSize',13)
 %similar to the jointed bar example. Parameters taken from 
 % Krishna and Chandramouli, 2012
 
-savfig = false;
+savfig = true;
 animfig = false;
 savdat = true;
-analyze = true;
+analyze = false;
 %% Setup Model
 Ey = 2.1e11;
 rho = 7680;
@@ -202,14 +202,15 @@ if savfig
 end
 
 relerms = squeeze(rms(aout-aout(:,end,:))./rms(aout(:,end,:)));
+% relerms = squeeze(rms((aout-aout(:,end,:))./(aout(:,end,:))));
 hci = find(any(relerms>thresh,2), 1,'last');
 
 figure(2)
 set(gcf, 'Color', 'white')
 clf()
 for fi=1:length(pfs)
-    plot(Hmaxs, relerms(:, pfs(fi)), '.-', 'LineWidth', 2, ...
-        'Color', colos(fi,:)); hold on
+    semilogy(Hmaxs, relerms(:, pfs(fi)), '.-', 'LineWidth', 2, ...
+             'Color', colos(fi,:)); hold on
 end
 set(gca, 'YScale', 'log')
 plot(xlim, thresh*[1 1], 'k--')
@@ -243,10 +244,12 @@ set(gca, 'YScale', 'log')
 xl = xlim;
 yl = ylim;
 HMS = [min(Hmaxs)/10 max(Hmaxs)*100];
-bb = plot(HMS, HMS.^2/5e3, 'k-', 'LineWidth', 1);
+bb = plot(HMS, HMS.^2/5e3, 'k-.', 'LineWidth', 1);
 cc = plot(HMS, HMS.^3/1e5, 'k:', 'LineWidth', 1);
+plot(Hmaxs(hci)*[1 1], ylim, 'k--')
 xlim(xl);
 ylim(yl);
+text(Hmaxs(hci)+1, max(abs(ylim))/2, sprintf('H=%d', Hmaxs(hci)), 'fontsize', 13)
 grid on
 grid minor
 grid minor

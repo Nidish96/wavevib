@@ -16,10 +16,9 @@ set(0,'defaultAxesFontSize',13)
 %similar to the jointed bar example. Parameters taken from 
 % Krishna and Chandramouli, 2012
 
-savfig = false;
+savfig = true;
 animfig = false;
-savdat = false;
-analyze = false;
+
 %% Setup Model
 Ey = 2.1e11;
 rho = 7680;
@@ -74,12 +73,19 @@ excs = struct('i', 2, 'nh', 1, ...
 
 %% Setup Joints
 cofs = @(w,xi) [-[zeros(1,4) 1 -1 -1j 1j zeros(1,4)];
-    -[zeros(1,8) 1 -1 -1j 1j];
-    kron([1 -1 -1], [1 -1 -1j 1j])];
+                -[zeros(1,8) 1 -1 -1j 1j];
+                kron([1 -1 -1], [1 -1 -1j 1j])];
+cofs0 = @(xi) [-[zeros(1,4) 0 0 0 6 zeros(1,4)];
+               -[zeros(1,8) 0 0 0 6];
+               kron([1 -1 -1], [0 0 0 1])];
 joints = struct('type', 3, 'is', [3 4 6], ...
                 'cofs', cofs, 'nl', [], ...  % Setup nl after settin 'h'
-    'nldcofs', @(w,xi) kron([1 -1 0;1 0 -1], [1 1 1 1]), ...
-    'nlfcofs', @(w,xi) [eye(2);0 0]/(Ey*Iy*Klib.K(w,xi)^3));
+                'nldcofs', @(w,xi) kron([1 -1 0;-1 0 1], [1 1 1 1]), ...
+                'nlfcofs', @(w,xi) [1 0;0 -1;0 0]/(Ey*Iy*Klib.K(w,xi)^3), ...
+                ...
+                'cofs0', cofs0, ...
+                'nldcofs0', @(xi) kron([1 -1 0;-1 0 1], [1 0 0 0]), ...
+                'nlfcofs0', @(xi) [1 0;0 -1;0 0]/(Ey*Iy));
 
 %% Pre-Processing
 [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib);
@@ -141,7 +147,7 @@ wbm.Rout = 2*(sum((1:Npts*Nwc)==opi1)-sum((1:Npts*Nwc)==opi2));  % relative coor
 colos = DISTINGUISHABLE_COLORS(length(Famps))*0.75;
 npfe = 20;
 
-for hi=[0 1]   
+for hi=[1]   
     hsel = (h==hi)';
     figure(hi+1)
     set(gcf, 'Color', 'white')
@@ -210,10 +216,15 @@ for hi=[0 1]
         ic2(1).EdgeColorData = uint8([colos(2,:) 1]'*255);
         ic2(1).VertexData(1) = 0.5;
         ic2(1).LineWidth = 1;
+
+        ll = legend(aa, 'Location', 'northwest');
     else
         ll.Visible = 'off';
     end
     % drawnow
+    if hi==0
+        xlim([7.5 10.1])
+    end
     
     if savfig
         savefig(sprintf('./FIGS/E3_FECOMP_H%d.fig', hi))
@@ -293,7 +304,7 @@ end
 %% Plot of Higher harmonics
 
 % his = [2 3 5 7 8 11];
-his = [0 2 3 4 5 7];
+his = [2 3 4 5 7 8];
 
 figure(4)
 poss = get(gcf, 'Position');

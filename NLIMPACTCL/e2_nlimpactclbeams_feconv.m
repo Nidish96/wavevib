@@ -1,6 +1,7 @@
 clc
 clear all
 addpath('../ROUTINES/')
+addpath('../ROUTINES/export_fig/')
 addpath('../ROUTINES/HARMONIC/')
 addpath('../ROUTINES/SOLVERS/')
 addpath('../ROUTINES/WBM/')
@@ -15,9 +16,9 @@ set(0,'defaultAxesFontSize',13)
 %similar to the jointed bar example. Parameters taken from 
 % Krishna and Chandramouli, 2012
 
-savfig = false;
+savfig = true;
 savdat = true;
-analyze = true;
+analyze = false;
 
 %% Setup Model
 Ey = 2.1e11;
@@ -65,6 +66,7 @@ Wexcs = wbm.Wexcs(1:3);
 %% Compute solution at same frequency for a different mesh
 Nn1s = [5 10 20 40 80 160];
 % Nn1s = [5 10 20 40 80 120];
+ttks = zeros(length(Nn1s), length(Famps));
 Routs = zeros(Nhc, length(Nn1s), length(Famps));
 Rrouts = zeros(Nhc, length(Nn1s), length(Famps));
 opt = optimoptions('fsolve', 'specifyObjectiveGradient', true, 'Display', 'off');
@@ -186,7 +188,7 @@ if analyze
             Routs(:, ni, fi) = (Rb*reshape(Usol,Nd,Nhc))';
             Rrouts(:, ni, fi) = (Rrel*reshape(Usol,Nd,Nhc))';
         end
-        fprintf('Done %d/%d\n', ni, length(Nn1s));
+        fprintf('Done %d/%d: %f\n', ni, length(Nn1s), ttks(ni, fi));
     end
 
     if savdat
@@ -204,21 +206,61 @@ WBMSOL([zinds rinds iinds], :) = ...
     [wbmsol(rinds0, :); real(wbmsol(hinds, :)); imag(wbmsol(hinds, :))];
 
 %% Plot Convergence
+ndstot = Nn1s+2*fix(.8*Nn1s);
+
+colos = DISTINGUISHABLE_COLORS(length(Famps))*0.75;
+
 figure(1)
 set(gcf, 'Color', 'white')
 clf()
-errs = squeeze(rms(Rrouts-Rrouts(:,end,:))./rms(Rrouts(:,end,:)));  % Abs Errors
+% errs = squeeze(rms(Rrouts-Rrouts(:,end,:))./rms(Rrouts(:,end,:)));
+errs = squeeze(rms((Rrouts-Rrouts(:,end,:))./(Rrouts(:,end,:))));
 % errs = [squeeze(rms(diff(Rrouts,[],2))./rms(Rrouts(:,end,:))); zeros(1,3)]; % Relative Cauchy Errors
 % errs = squeeze(rms(Rrouts-permute(WBMSOL, [1 3 2])*2)./rms(2*permute(WBMSOL, [1 3 2])));
-loglog(Nn1s+2*fix(.8*Nn1s), errs, 'o-', 'LineWidth', 2, ...
-        'MarkerFaceColor', 'w')
+for fi=1:length(Famps)
+    loglog(ndstot, errs(:, fi), 'o-', 'LineWidth', 2, ...
+           'MarkerFaceColor', 'w', 'Color', colos(fi,:)); hold on
+end
+xl = xlim;
+yl = ylim;
+ndp = [1 1e3];
+plot(ndp, 1e3./ndp.^4, 'k-.', 'LineWidth', 1);
+xlim(xl)
+ylim(yl)
 grid on
 grid minor
 grid minor
-legend(arrayfun(@(f) sprintf('F=%.2f N', f), Famps, 'UniformOutput', false), ...
-       'Location', 'best')
+legend([arrayfun(@(f) sprintf('F=%.2f N', f), Famps, 'UniformOutput', false), ...
+        '$\mathcal{O}(N^{-4})$'], 'Location', 'northeast')
 xlabel('Total No. of Nodes')
 ylabel('Relative RMSE (all harmonics)')
 if savfig
-    export_fig('./FIGS/E2_FECONV.png', '-dpng', '-r300');
+    savefig('./FIGS/E2_FECONV.fig')
+    export_fig('./FIGS/E2_FECONV.eps', '-depsc');
+end
+
+figure(2)
+set(gcf, 'Color', 'white')
+clf()
+for fi=1:length(Famps)
+    loglog(ndstot, ttks(:, fi), 'o-', 'LineWidth', 2, ...
+           'MarkerFaceColor', 'w', 'Color', colos(fi,:)); hold on
+end
+xl = xlim;
+yl = ylim;
+ndp = [1 1e3];
+plot(ndp, ndp.^2/2e4, 'k-.', 'LineWidth', 1);
+xlim(xl)
+ylim(yl)
+grid on
+grid minor
+grid minor
+legend([arrayfun(@(f) sprintf('F=%.2f N', f), Famps, 'UniformOutput', false), ...
+        '$\mathcal{O}(N^2)$'], 'Location', 'southeast')
+xlabel('Total No. of Nodes')
+ylabel('Avg. CPU Time (s)')
+
+if savfig
+    savefig('./FIGS/E2_FETTK.fig')
+    export_fig('./FIGS/E2_FETTK.eps', '-depsc');
 end
