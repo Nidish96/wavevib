@@ -1,9 +1,7 @@
 # WaveVib
 
 
-
-I update the branch locally.
-
+Updating Branch on the web.
 
 
 WaveVib is intended to be a set of OCTAVE/MATLAB routines that can be used to study wave-based linear and nonlinear structures.
