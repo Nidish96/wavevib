@@ -1,24 +1,33 @@
 # WaveVib
 
-WaveVib is intended to be a set of OCTAVE/MATLAB routines that can be used to study wave-based linear and nonlinear structures. 
-The main advantage with using this approach comes from the fact that the linear portions of the problem are represented without 
-any approximation (unlike weighted residual or variational approaches). Immediate use cases include jointed beams, trusses, 
-frame structures, fluid-filled columns, rotordynamics, etc.
-+ Supports periodic as well as quasi-periodic response regimes
 
-A good starting place for the new user are the papers Balaji, Brake, Leamy (2022a,b) [1,2].
+
+Updating Branch.
+
+
+
+WaveVib is intended to be a set of OCTAVE/MATLAB routines that can be used to study wave-based linear and nonlinear structures.
+The main advantage with using this approach comes from the fact that the linear portions of the problem are represented without
+any approximation (unlike weighted residual or variational approaches). Immediate use cases include jointed beams, trusses,
+frame structures, fluid-filled columns, rotordynamics, etc.
+
+* Supports periodic as well as quasi-periodic response regimes
+
+A good starting place for the new user are the papers Balaji, Brake, Leamy (2022a,b) \[1,2].
 
 The "EXAMPLES" folder contains examples with most of the core functionality.
 
 The "DEVEL" folder is for development purposes. Collaborations are welcome.
 
 BUGFIXES TODO:
+
 1. Multiharmonic excitation at single point has to be implemented
 2. Allow for simple handling of constant coefficient matrices (not functions of @(w,xi)).
 3. Find a way to properly handle the zero harmonics of boundary conditions.
 4. Fix the reduced representations (WVAMATr, WVHBRESFUNr)
 
-TODO (in no particular order): 
+TODO (in no particular order):
+
 1. 3D frame joint constitutions
 2. EPMC Implementation
 3. Joints connecting multiple pieces
@@ -26,6 +35,7 @@ TODO (in no particular order):
 5. Stability Implementation
 6. Quasi-Periodic Calculations
 
-[1] https://link.springer.com/article/10.1007/s11071-022-07765-0
+\[1] https://link.springer.com/article/10.1007/s11071-022-07765-0
 
-[2] https://link.springer.com/article/10.1007/s11071-022-07969-4
+\[2] https://link.springer.com/article/10.1007/s11071-022-07969-4
+
