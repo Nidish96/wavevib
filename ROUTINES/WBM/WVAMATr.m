@@ -115,12 +115,17 @@ function [Amatr, dAmatdwr, dAmatdxir, Fvr, dFvdwr, dFvdxir, JEVr, RECOV] = WVAMA
         % linear joints
         linjis = find(arrayfun(@(j) isempty(j.nl), joints));  % Linear joints
 
-        jeqis = cumsum([1 joints.nof]);  % Joint eq ids
-        j0 = jeqis(1:end-1);
-        je = jeqis(2:end)-1;
+        if ~isempty(joints)
+            jeqis = cumsum([1 joints.nof]);  % Joint eq ids
+            j0 = jeqis(1:end-1);
+            je = jeqis(2:end)-1;
+        else
+            j0 = [];
+            je = [];
+        end
 
         lis = [];
-        for i=linjis
+        for i=linjis(:)'
             lis = [lis j0(i):je(i)];
         end
         eqis = [eqis nbcs+lis];
@@ -156,6 +161,7 @@ function [Amatr, dAmatdwr, dAmatdxir, Fvr, dFvdwr, dFvdxir, JEVr, RECOV] = WVAMA
         neqs = length(eqis);
         rng(1);
         ninds = find(any(B1));
+        disp(['neqs = ',num2str(neqs), ' rank(B1) = ', num2str(rank(B1))])
         while rank(B1(:, ninds(1:neqs)))<neqs
             ninds = ninds(randperm(length(ninds)));
         end

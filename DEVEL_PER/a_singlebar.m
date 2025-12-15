@@ -23,7 +23,7 @@ h = [1];
 [Amat, dAmatdw, dAmatdxi] = WVAMAT([1e5;0],h,pcs,bcs,joints,Klib);
 
 %%
-Wresa = (1:10)*pi/ell*sqrt(Ey/rho);  % Fix-Fix
+Wresa = (1:10)*pi/ell*sqrt(Ey/rho)  % Fix-Fix
 % Wresa = (2*(1:10)-1)*pi/2/ell*sqrt(Ey/rho);  % Fix-Free
 
 Nw = 1000;

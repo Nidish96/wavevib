@@ -1,17 +1,17 @@
 clc
 clear all
 addpath('../ROUTINES/SOLVERS/')
-
+addpath('../ROUTINES/WBM/')
 %%
-Ey = 190e9;
-G = 77.5e9;
-nu = 0.29;
-rho = 7680;
-wid = 0.1;
+Ey = 197e9;
+G = 73.6e9;
+nu = 0.3;
+rho = 7833;
+wid = 0.4;
 brd = 0.4;
 Ar = wid*brd;
 Iy = wid^3*brd/12;
-L0 = 2.0;
+L0 = 4.0;
 kap = 10*(1+nu)/(12+11*nu);
 
 % Dispersion Relationship
@@ -66,15 +66,15 @@ pcs = struct('coords', [0; L0], 'wcomps', wcomps);
 %     'dcofsdw', @(w,xi) [Klib(1).dKdw(w,xi)*rel.P(w,xi,1,Klib(1))+Klib(1).K(w,xi)*rel.dPdw(w,xi,1,Klib(1)) -Klib(1).dKdw(w,xi)*rel.P(w,xi,-1,Klib(1))-Klib(1).K(w,xi)*rel.dPdw(w,xi,1,Klib(1)) Klib(2).dKdw(w,xi)*rel.P(w,xi,1,Klib(2))+Klib(2).K(w,xi)*rel.dPdw(w,xi,1,Klib(2)) -Klib(2).dKdw(w,xi)*rel.P(w,xi,-1,Klib(2))-Klib(2).K(w,xi)*rel.dPdw(w,xi,-1,Klib(2))], ...
 %     'dcofsdxi', @(w,xi) [Klib(1).dKdxi(w,xi)*rel.P(w,xi,1,Klib(1))+Klib(1).K(w,xi)*rel.dPdxi(w,xi,1,Klib(1)) -Klib(1).dKdxi(w,xi)*rel.P(w,xi,-1,Klib(1))-Klib(1).K(w,xi)*rel.dPdxi(w,xi,1,Klib(1)) Klib(2).dKdxi(w,xi)*rel.P(w,xi,1,Klib(2))+Klib(2).K(w,xi)*rel.dPdxi(w,xi,1,Klib(2)) -Klib(2).dKdxi(w,xi)*rel.P(w,xi,-1,Klib(2))-Klib(2).K(w,xi)*rel.dPdxi(w,xi,-1,Klib(2))])];
 % fix-fix
-bcs = [struct('i', 1, 'cofs', @(w,xi) [1 1 1 1]);
-    struct('i', 1, 'cofs', @(w,xi) [rel.P(w,xi,1,Klib(1)) rel.P(w,xi,-1,Klib(1)) rel.P(w,xi,1,Klib(2)) rel.P(w,xi,-1,Klib(2))]);
-    struct('i', 2, 'cofs', @(w,xi) [1 1 1 1]);
-    struct('i', 2, 'cofs', @(w,xi) [rel.P(w,xi,1,Klib(1)) rel.P(w,xi,-1,Klib(1)) rel.P(w,xi,1,Klib(2)) rel.P(w,xi,-1,Klib(2))])];
-% % fix-free
-% bcs = [struct('i', 1, 'cofs', @(w,xi) [1 1 1 1]);
-%     struct('i', 1, 'cofs', @(w,xi) [rel.P(w,xi,1,Klib(1)) rel.P(w,xi,-1,Klib(1)) rel.P(w,xi,1,Klib(2)) rel.P(w,xi,-1,Klib(2))]);
-%     struct('i', 2, 'cofs', @(w,xi) [1j*Klib(1).K(w,xi)-rel.P(w,xi,1,Klib(1)) -1j*Klib(1).K(w,xi)-rel.P(w,xi,-1,Klib(1)) 1j*Klib(2).K(w,xi)-rel.P(w,xi,1,Klib(2)) -1j*Klib(2).K(w,xi)-rel.P(w,xi,-1,Klib(2))]);
-%     struct('i', 2, 'cofs', @(w,xi) [Klib(1).K(w,xi)*rel.P(w,xi,1,Klib(1)) -Klib(1).K(w,xi)*rel.P(w,xi,-1,Klib(1)) Klib(2).K(w,xi)*rel.P(w,xi,1,Klib(2)) -Klib(2).K(w,xi)*rel.P(w,xi,-1,Klib(2))])];
+%bcs = [struct('i', 1, 'cofs', @(w,xi) [1 1 1 1]);
+%    struct('i', 1, 'cofs', @(w,xi) [rel.P(w,xi,1,Klib(1)) rel.P(w,xi,-1,Klib(1)) rel.P(w,xi,1,Klib(2)) rel.P(w,xi,-1,Klib(2))]);
+%    struct('i', 2, 'cofs', @(w,xi) [1 1 1 1]);
+%    struct('i', 2, 'cofs', @(w,xi) [rel.P(w,xi,1,Klib(1)) rel.P(w,xi,-1,Klib(1)) rel.P(w,xi,1,Klib(2)) rel.P(w,xi,-1,Klib(2))])];
+ % fix-free
+ bcs = [struct('i', 1, 'cofs', @(w,xi) [1 1 1 1]);
+     struct('i', 1, 'cofs', @(w,xi) [rel.P(w,xi,1,Klib(1)) rel.P(w,xi,-1,Klib(1)) rel.P(w,xi,1,Klib(2)) rel.P(w,xi,-1,Klib(2))]);
+     struct('i', 2, 'cofs', @(w,xi) [1j*Klib(1).K(w,xi)-rel.P(w,xi,1,Klib(1)) -1j*Klib(1).K(w,xi)-rel.P(w,xi,-1,Klib(1)) 1j*Klib(2).K(w,xi)-rel.P(w,xi,1,Klib(2)) -1j*Klib(2).K(w,xi)-rel.P(w,xi,-1,Klib(2))]);
+     struct('i', 2, 'cofs', @(w,xi) [Klib(1).K(w,xi)*rel.P(w,xi,1,Klib(1)) -Klib(1).K(w,xi)*rel.P(w,xi,-1,Klib(1)) Klib(2).K(w,xi)*rel.P(w,xi,1,Klib(2)) -Klib(2).K(w,xi)*rel.P(w,xi,-1,Klib(2))])];
 
 % Joints
 joints = [];
@@ -92,20 +92,20 @@ iw = 1;
 h = 1;
 
 Nw = 2000;
-Ws = linspace(eps, 1e4, Nw);
+Ws = linspace(eps, 1e3, Nw);
 Dv = zeros(size(Ws));
 for iw=1:Nw
     Amat = WVAMAT([Ws(iw);0],h,pcs,bcs,joints,Klib);
     Dv(iw) = det([real([Amat 1j*Amat]); imag([Amat 1j*Amat])]);
 end
 
-% %% Analytical solution
-% Wres = 2*pi*3.56*sqrt(Ey*Iy/(rho*Ar*L0^4));
-% 
-% fan = @(w) cos(sqrt(w)*sqrt(sqrt(rho*Ar/Ey/Iy))*L0).*cosh(sqrt(w)*sqrt(sqrt(rho*Ar/Ey/Iy))*L0)-1;
-% fz = @(lam) deal(cos(lam*L0)*cosh(lam*L0)-1, -L0*sin(lam*L0)*cosh(lam*L0)+cos(lam*L0)*sinh(lam*L0));
-% opt = optimoptions('fsolve', 'SpecifyObjectiveGradient',true, 'Display','iter');
-% Lamsol = fsolve(fz, sqrt(Wres)*(rho*Ar/(Ey*Iy))^(0.25), opt);
+%% Analytical solution
+Wres = 2*pi*3.56*sqrt(Ey*Iy/(rho*Ar*L0^4));
+ 
+fan = @(w) cos(sqrt(w)*sqrt(sqrt(rho*Ar/Ey/Iy))*L0).*cosh(sqrt(w)*sqrt(sqrt(rho*Ar/Ey/Iy))*L0)-1;
+fz = @(lam) deal(cos(lam*L0)*cosh(lam*L0)-1, -L0*sin(lam*L0)*cosh(lam*L0)+cos(lam*L0)*sinh(lam*L0));
+opt = optimoptions('fsolve', 'SpecifyObjectiveGradient',true, 'Display','iter');
+Lamsol = fsolve(fz, sqrt(Wres)*(rho*Ar/(Ey*Iy))^(0.25), opt)
 
 %%
 ebKlib = struct('K', @(w,xi) sqrt(w)*(rho*Ar/Ey/Iy)^(0.25), ...
@@ -114,8 +114,8 @@ ebKlib = struct('K', @(w,xi) sqrt(w)*(rho*Ar/Ey/Iy)^(0.25), ...
 fixfix = @(w) 2*(1-cos(ebKlib.K(w,0)*L0).*cosh(ebKlib.K(w,0)*L0));
 fixfree = @(w) 2*(1+cos(ebKlib.K(w,0)*L0).*cosh(ebKlib.K(w,0)*L0));
 
-figure(1)
+figure(2)
 clf()
 semilogy(Ws, Dv); hold on
-plot(Ws, abs(fixfix(Ws)))
-% plot(Ws, abs(fixfree(Ws)))
+%plot(Ws, abs(fixfix(Ws)))
+ plot(Ws, abs(fixfree(Ws)))

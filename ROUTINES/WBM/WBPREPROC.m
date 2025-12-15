@@ -256,6 +256,9 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
 
             joints(n).pi = find(arrayfun(@(p) prod(joints(n).i-p.irange)<=0, pcs));
             joints(n).pj = find(arrayfun(@(p) prod(joints(n).j-p.irange)<=0, pcs));
+
+            joints(n).is = [joints(n).i joints(n).j];
+            joints(n).ps = [joints(n).pi joints(n).pj];
           otherwise
             ms = cell(joints(n).type,1);
             joints(n).ps = zeros(1,joints(n).type);
@@ -331,8 +334,13 @@ function [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib
     for i=1:nnl
         k = nlis(i);
 
-        for j=1:joints(k).type
-            pcs(joints(k).ps(j)).kni = joints(k).is(j)-pcs(joints(k).ps(j)).irange(1)+1;
+        if joints(k).type==2
+            pcs(joints(k).pi).kni = joints(k).i-pcs(joints(k).pi).irange(1)+1;
+            pcs(joints(k).pj).kni = joints(k).j-pcs(joints(k).pj).irange(1)+1;
+        else
+            for j=1:joints(k).type
+                pcs(joints(k).ps(j)).kni = joints(k).is(j)-pcs(joints(k).ps(j)).irange(1)+1;
+            end
         end
     end
     for i=1:length(pcs)

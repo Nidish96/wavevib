@@ -22,7 +22,12 @@ function [Det, dDetdw, dDetdxi] = WVLDETFUN(wxi, h, pcs, bcs, joints, Klib)
 %       Det     : (scalar,real) determinant
 %       dDetdw  : (scalar,real) 
 %       dDetdxi : (scalar,real)
-    [Amat, dAmatdw, dAmatdxi] = WVAMATr(wxi, h, pcs, bcs, joints, Klib, 'r');
+
+% if isempty(joints)
+    [Amat, dAmatdw, dAmatdxi] = WVAMAT(wxi, h, pcs, bcs, joints, Klib, 'r');
+% else
+%     [Amat, dAmatdw, dAmatdxi] = WVAMATr(wxi, h, pcs, bcs, joints, Klib, 'r');
+% end
 
     Det = det(Amat);
     tmp = Amat\[dAmatdw dAmatdxi];

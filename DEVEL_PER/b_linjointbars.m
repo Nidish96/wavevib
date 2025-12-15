@@ -61,7 +61,7 @@ for iw = 1:Nw
 %     [Amat, ~, ~, Fv] = WVAMAT([Ws(iw);0],h,pcs,bcs,joints,Klib);
 %     Dv(iw) = det([real([Amat 1j*Amat]); imag([Amat 1j*Amat])]);
     Dv(iw) = WVLDETFUN([Ws(iw);0],h,pcs,bcs,joints,Klib);
-    Us(:, iw) = Amat\Fv;
+    Us(:, iw) = Amat\Fv; 
 end
 
 %%

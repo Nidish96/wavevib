@@ -68,7 +68,7 @@ nldcofs = @(w,xi) [1 1 1 1 -1 -1 -1 -1;
     kron([1 -1], [Ps{1}(w,xi) Ps{2}(w,xi) Ps{3}(w,xi) Ps{4}(w,xi)])];
 
 kJs = diag([1e9 1e9]);
-cJs = diag([320 420]);
+cJs = diag([320 320]);
 gJs = diag([1e8 0]);
 nljoints = struct('type', 2, 'i', 3, 'j', 4, 'cofs', cofs, ...
     'nl', @(Uw) HDUFF(Uw, kJs, cJs, gJs, h, Nt), ...
