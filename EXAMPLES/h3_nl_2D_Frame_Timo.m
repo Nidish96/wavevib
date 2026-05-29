@@ -8,8 +8,9 @@ set(0, 'DefaultLegendInterpreter', 'latex');
 set(0,'defaultAxesFontSize',13)
 
 %DESCRIPTION: This is a portal frame with Timoshenko members
-%similar to previous example.
-% Here the angle joints are replaced with a spring-damper joint
+% similar to previous example.
+% Here the angle joints are replaced with nonlinear spring-damper joints.
+
 %% Setup Model
 Ey = 2.068e11;
 nu = 0.3;
@@ -20,7 +21,7 @@ wid = 0.89208;
 brd = 0.021255;
 Ar = 0.0189612524;  % Area
 Iy = 0.001257435137946;  % 2nd moment of area
-%coefficients
+% Coefficients
 Cb = sqrt(Ey*Iy / (rho*Ar)); %bending stiffness
 Cs = sqrt(kappa*G*Ar/(rho*Ar)); %shear stiffness
 Cr = sqrt(Iy / Ar); %rotational effects
@@ -32,7 +33,7 @@ Cr = sqrt(Iy / Ar); %rotational effects
      abs(0.5*((1/Cs)^2 + (Cr/Cb)^2)*w.^2 - ...
      sqrt((w.^2)/(Cb^2) + 0.25*((1/Cs)^2 - (Cr/Cb)^2)^2 * w.^4))));
      struct('K', @(w,xi) w*sqrt(rho/Ey))];
-%Wave components
+% Wave components
 wcomps = [-1j 1; % First component -> exp(-ik1 x )
            -1 2; % Second component-> exp(-k2 x )
            1j 1; % Third component -> exp(ik1 x )
@@ -42,7 +43,7 @@ wcomps = [-1j 1; % First component -> exp(-ik1 x )
 % The relations between the coefficients of deflection wave components & bending slope wave components
 P = @(w,xi) (Klib(1).K(w,xi).^2 * Cs^2 - w.^2) ./ (Klib(1).K(w,xi) * Cs^2);
 N = @(w,xi) (Klib(2).K(w,xi).^2 * Cs^2 + w.^2) ./ (Klib(2).K(w,xi) * Cs^2);
-%pieces
+% Pieces
 L = 15.24;  
 H = 15.24;
 pcs = [struct('coords',[0 0;0 H/2;0 H],'wcomps', wcomps);
@@ -51,51 +52,50 @@ pcs = [struct('coords',[0 0;0 H/2;0 H],'wcomps', wcomps);
 % BCs (Fix_Fix)
 bcs = [struct('i', 1, 'cofs', @(w,xi) [1 1 1 1 0 0; -1j*P(w,xi) -1*N(w,xi) 1j*P(w,xi) 1*N(w,xi) 0 0; 0 0 0 0 1 1]);
     struct('i', 7, 'cofs', @(w,xi) [1 1 1 1 0 0; -1j*P(w,xi) -1*N(w,xi) 1j*P(w,xi) 1*N(w,xi) 0 0; 0 0 0 0 1 1])];
-% angle-joint
-m = brd*brd*wid*rho;
-J = (brd^2 + brd^2)*m/12;
-cofs3 = @(w,xi)[ [0 0 0 0 1 1 0 0 0 0 0 0] - [0 0 0 0 0 0 1 1 1 1 0 0];%u1-v2=0
-    [0 0 0 0 0 0 0 0 0 0 1 1] + [1 1 1 1 0 0 0 0 0 0 0 0];%u2+v1=0
-    [-1j*P(w,xi) -1*N(w,xi) 1j*P(w,xi) 1*N(w,xi) 0 0 1j*P(w,xi) 1*N(w,xi) -1j*P(w,xi) -1*N(w,xi) 0 0];% psi1-psi2=0
-    (G*Ar*kappa)*[0 0 0 0 0 0 -1j*(Klib(1).K(w,xi)-P(w,xi)) (-Klib(2).K(w,xi)+N(w,xi)) 1j*(Klib(1).K(w,xi)-P(w,xi)) (Klib(2).K(w,xi)-N(w,xi)) 0 0] - (Ey*Ar*Klib(3).K(w,xi))*[0 0 0 0 -1j 1j 0 0 0 0 0 0] + (m*w*w)*[0 0 0 0 1 1 0 0 0 0 0 0]; % V2-F1=0
-    (G*Ar*kappa)*[-1j*(Klib(1).K(w,xi)-P(w,xi)) (-Klib(2).K(w,xi)+N(w,xi)) 1j*(Klib(1).K(w,xi)-P(w,xi)) (Klib(2).K(w,xi)-N(w,xi)) 0 0 0 0 0 0 0 0] + (Ey*Ar*Klib(3).K(w,xi))*[0 0 0 0 0 0 0 0 0 0 -1j 1j] + (m*w*w)*[0 0 0 0 0 0 0 0 0 0 1 1]; % F2+V1=0
-    (Ey*Iy)*[(Klib(1).K(w,xi)*P(w,xi)) (-Klib(2).K(w,xi)*N(w,xi)) (Klib(1).K(w,xi)*P(w,xi)) (-Klib(2).K(w,xi)*N(w,xi)) 0 0 (-Klib(1).K(w,xi)*P(w,xi)) (Klib(2).K(w,xi)*N(w,xi)) (-Klib(1).K(w,xi)*P(w,xi)) (Klib(2).K(w,xi)*N(w,xi)) 0 0] + ...
-    (0.5*brd*G*Ar*kappa)*[-1j*(Klib(1).K(w,xi)-P(w,xi)) (-Klib(2).K(w,xi)+N(w,xi)) 1j*(Klib(1).K(w,xi)-P(w,xi)) (Klib(2).K(w,xi)-N(w,xi)) 0 0 -1j*(Klib(1).K(w,xi)-P(w,xi)) (-Klib(2).K(w,xi)+N(w,xi)) 1j*(Klib(1).K(w,xi)-P(w,xi)) (Klib(2).K(w,xi)-N(w,xi)) 0 0] +...
-    (J*w*w)*[-1j*P(w,xi) -1*N(w,xi) 1j*P(w,xi) 1*N(w,xi) 0 0 0 0 0 0 0 0]]; % M2-M1+(h/2 * (V1+V2)) = J(w^2)psij
-       
-%% Non-linear spring
+   
+%% Non-linear spring (instead of rigid angle joints)
 h = [1; 3];
 Nt = 128;
-
 kJs = diag([1e9 1e9 1e9]);
 cJs = diag([5e4 5e4 5e4]);
-%gJs = diag([0 0 0]); %For linear case
-gJs = diag([1e14 1e14 0]);
+gJs = diag([5e15 5e15 0]);
 
-cofs = @(w,xi) [(G*Ar*kappa)*[-1j*(Klib(1).K(w,xi)-P(w,xi)) (-Klib(2).K(w,xi)+N(w,xi)) 1j*(Klib(1).K(w,xi)-P(w,xi)) (Klib(2).K(w,xi)-N(w,xi)) 0 0 0 0 0 0 0 0];
-    (Ey*Iy)*[(-Klib(1).K(w,xi)*P(w,xi)) (Klib(2).K(w,xi)*N(w,xi)) (-Klib(1).K(w,xi)*P(w,xi)) (Klib(2).K(w,xi)*N(w,xi)) 0 0 0 0 0 0 0 0];
+cofs = @(w,xi) [(G*Ar*kappa)*[-1j*(Klib(1).K(w,xi)-P(w,xi)) (-Klib(2).K(w,xi)+N(w,xi)) ...
+    1j*(Klib(1).K(w,xi)-P(w,xi)) (Klib(2).K(w,xi)-N(w,xi)) 0 0 0 0 0 0 0 0];
+    (Ey*Iy)*[(-Klib(1).K(w,xi)*P(w,xi)) (Klib(2).K(w,xi)*N(w,xi)) ...
+    (-Klib(1).K(w,xi)*P(w,xi)) (Klib(2).K(w,xi)*N(w,xi)) 0 0 0 0 0 0 0 0];
     Ey*Ar*Klib(3).K(w,xi)*[0 0 0 0 -1j 1j 0 0 0 0 0 0];
-    (G*Ar*kappa)*[-1j*(Klib(1).K(w,xi)-P(w,xi)) (-Klib(2).K(w,xi)+N(w,xi)) 1j*(Klib(1).K(w,xi)-P(w,xi)) (Klib(2).K(w,xi)-N(w,xi)) 0 0 1j*(Klib(1).K(w,xi)-P(w,xi)) (Klib(2).K(w,xi)-N(w,xi)) -1j*(Klib(1).K(w,xi)-P(w,xi)) (-Klib(2).K(w,xi)+N(w,xi)) 0 0];
-    (Ey*Iy)*[(-Klib(1).K(w,xi)*P(w,xi)) (Klib(2).K(w,xi)*N(w,xi)) (-Klib(1).K(w,xi)*P(w,xi)) (Klib(2).K(w,xi)*N(w,xi)) 0 0 (Klib(1).K(w,xi)*P(w,xi)) (-Klib(2).K(w,xi)*N(w,xi)) (Klib(1).K(w,xi)*P(w,xi)) (-Klib(2).K(w,xi)*N(w,xi)) 0 0 ];
+    (G*Ar*kappa)*[-1j*(Klib(1).K(w,xi)-P(w,xi)) (-Klib(2).K(w,xi)+N(w,xi)) ...
+    1j*(Klib(1).K(w,xi)-P(w,xi)) (Klib(2).K(w,xi)-N(w,xi)) 0 0 1j*(Klib(1).K(w,xi)-P(w,xi)) ...
+    (Klib(2).K(w,xi)-N(w,xi)) -1j*(Klib(1).K(w,xi)-P(w,xi)) (-Klib(2).K(w,xi)+N(w,xi)) 0 0];
+    (Ey*Iy)*[(-Klib(1).K(w,xi)*P(w,xi)) (Klib(2).K(w,xi)*N(w,xi)) (-Klib(1).K(w,xi)*P(w,xi)) ...
+    (Klib(2).K(w,xi)*N(w,xi)) 0 0 (Klib(1).K(w,xi)*P(w,xi)) (-Klib(2).K(w,xi)*N(w,xi)) ...
+    (Klib(1).K(w,xi)*P(w,xi)) (-Klib(2).K(w,xi)*N(w,xi)) 0 0 ];
     (Ey*Ar*Klib(3).K(w,xi))*[0 0 0 0 -1j 1j 0 0 0 0 1j -1j]];
 
 joints = [struct('type', 2, 'i', 3, 'j', 4, 'cofs', cofs, ...
     'nl', @(Uw) HDUFF(Uw, kJs, cJs, gJs, h, Nt), ...
-    'nldcofs', @(w,xi) [-1 -1 -1 -1 0 0 0 0 0 0 1 1; 0 0 0 0 -1 -1 1 1 1 1 0 0; 1j*P(w,xi) 1*N(w,xi) -1j*P(w,xi) -1*N(w,xi) 0 0 -1j*P(w,xi) -1*N(w,xi) 1j*P(w,xi) 1*N(w,xi) 0 0], ...
+    'nldcofs', @(w,xi) [-1 -1 -1 -1 0 0 0 0 0 0 1 1; ...
+    0 0 0 0 -1 -1 1 1 1 1 0 0; ...
+    1j*P(w,xi) 1*N(w,xi) -1j*P(w,xi) -1*N(w,xi) 0 0 -1j*P(w,xi) -1*N(w,xi) 1j*P(w,xi) 1*N(w,xi) 0 0], ...
     'nlfcofs', @(w,xi) [eye(3);zeros(3)]);
     struct('type', 2, 'i', 5, 'j', 6, 'cofs', cofs, ...
     'nl', @(Uw) HDUFF(Uw, kJs, cJs, gJs, h, Nt), ...
-    'nldcofs',@(w,xi) [0 0 0 0 1 1 -1 -1 -1 -1 0 0; 1 1 1 1 0 0 0 0 0 0 -1 -1; -1j*P(w,xi) -1*N(w,xi) 1j*P(w,xi) 1*N(w,xi) 0 0 1j*P(w,xi) 1*N(w,xi) -1j*P(w,xi) -1*N(w,xi) 0 0], ...
+    'nldcofs',@(w,xi) [0 0 0 0 1 1 -1 -1 -1 -1 0 0; ...
+    1 1 1 1 0 0 0 0 0 0 -1 -1; ...
+    -1j*P(w,xi) -1*N(w,xi) 1j*P(w,xi) 1*N(w,xi) 0 0 1j*P(w,xi) 1*N(w,xi) -1j*P(w,xi) -1*N(w,xi) 0 0], ...
     'nlfcofs', @(w,xi) [eye(3);zeros(3)])];
  
 
 %% Excitation
-Mx = @(w,xi)inv([G*Ar*kappa*[-1j*(Klib(1).K(w,xi)-P(w,xi)) (-Klib(2).K(w,xi)+N(w,xi)) 1j*(Klib(1).K(w,xi)-P(w,xi)) (Klib(2).K(w,xi)-N(w,xi)) 0 0];
-                  (Ey*Iy)*[(-Klib(1).K(w,xi)*P(w,xi)) (Klib(2).K(w,xi)*N(w,xi)) (-Klib(1).K(w,xi)*P(w,xi)) (Klib(2).K(w,xi)*N(w,xi)) 0 0];
-                  Ey*Ar*Klib(3).K(w,xi)*[0 0 0 0 -1j 1j];
-                  [1 1 1 1 0 0];
-                  [-1j*P(w,xi) -1*N(w,xi) 1j*P(w,xi) 1*N(w,xi) 0 0];
-                  [0 0 0 0 1 1]]);
+Mx = @(w,xi)inv([G*Ar*kappa*[-1j*(Klib(1).K(w,xi)-P(w,xi)) (-Klib(2).K(w,xi)+N(w,xi)) ...
+    1j*(Klib(1).K(w,xi)-P(w,xi)) (Klib(2).K(w,xi)-N(w,xi)) 0 0];
+    (Ey*Iy)*[(-Klib(1).K(w,xi)*P(w,xi)) (Klib(2).K(w,xi)*N(w,xi)) ...
+    (-Klib(1).K(w,xi)*P(w,xi)) (Klib(2).K(w,xi)*N(w,xi)) 0 0];
+    Ey*Ar*Klib(3).K(w,xi)*[0 0 0 0 -1j 1j];
+    [1 1 1 1 0 0];
+    [-1j*P(w,xi) -1*N(w,xi) 1j*P(w,xi) 1*N(w,xi) 0 0];
+    [0 0 0 0 1 1]]);
 
 excs = struct('i', 2, 'nh', 1, 'rcofs', @(w,xi) Mx(w,xi)*[1/2;0;0;0;0;0], ...
     'rcofs0', [1/2;0;0;0;0;0]);
@@ -111,9 +111,9 @@ Nh = length(h);
 Nhc = sum((h==0)+2*(h~=0));
 [zinds,hinds,rinds0,rinds,iinds] = HINDS(Npts*Nwc, h);
 
-Wst = 67.52;
-Wen = 67.59; 
-dw = 1;
+Wst = 64.95;
+Wen = 65.2; 
+dw = 0.5;
 
 Copt = struct('Nmax', 700, 'angopt', 1e-2, 'DynDscale', 1);
 Famps = 1e2*[1 5 10];
@@ -133,7 +133,7 @@ end
 
 %% Plot Results
 opi = 7:12;
-figure(3)
+figure()
 clf()
 aa = gobjects(size(Famps));
 for fi=1:length(Famps)

@@ -11,13 +11,13 @@ set(0,'defaultAxesFontSize',13)
 %DESCRIPTION: This is a single Euler-Bernoulli Beam example
 
 %% Setup Model
-Ey = 197e9;
-rho = 7833;
-wid = 0.3;  % Width
-brd = 0.3;  % Breadth
+Ey = 190e9;
+rho = 7680;
+wid = 0.2;  % Width
+brd = 0.4;  % Breadth
 Ar = wid*brd;  % Area
 Iy = wid^3*brd/12;  % 2nd moment of area
-L0 = 3.0;  % Total Length
+L0 = 4.0;  % Total Length
 Klib = struct('K', @(w,xi) sqrt(w)*(rho*Ar/Ey/Iy)^(0.25));
 wcomps = [1 1;  % First component -> exp(  k x )
          -1 1;  % Second component-> exp( -k x )
@@ -31,15 +31,16 @@ bcs = [struct('i', 1, 'cofs', @(w,xi) [1 1 1 1; 1 -1 1j -1j]);
 
 %% Pre-processing
 [pcs, bcs, ~, ~, Klib] = WBPREPROC(pcs, bcs, [], [], Klib);
+
 %% Compute determinant of linear Jacobian
 Nw = 1000;
-Ws = linspace(eps, 1e3, Nw);
+Ws = linspace(eps, 5e3, Nw);
 Ds = zeros(1,Nw);
 for iw=1:Nw
     Ds(iw) = WVLDETFUN([Ws(iw);0], 1, pcs, bcs, [], Klib);
 end
 %% Plot
-figure(1); clf();
+figure(); clf();
 semilogy(Ws, Ds);
 hold on;
 xlabel('Frequency (rad/s)')

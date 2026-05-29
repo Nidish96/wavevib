@@ -1,4 +1,3 @@
-
 clc
 clear all
 addpath('../ROUTINES/SOLVERS/')
@@ -30,6 +29,7 @@ pcs = [struct('coords', [0;L0/3;L0], 'wcomps', wcomps);
 % Setup Boundary Conditions. Fix-Fix used here.
 bcs = [struct('i', 1, 'cofs', @(w,xi) [1 1 1 1; 1 -1 1j -1j]);
     struct('i', 5, 'cofs', @(w,xi) [1 1 1 1; 1 -1 1j -1j])];
+
 %% Setup the linear Joint
 kJ = 1e9;
 cJ = 320;
@@ -41,6 +41,7 @@ cofs = @(w,xi) [(-Ey*Iy*Klib.K(w,xi)^3)*[1 -1 -1j 1j 0 0 0 0] +...
     (-Ey*Iy*Klib.K(w,xi)^2)*[1 1 -1 -1 -1 -1 1 1]];
 
 joints = struct('type', 2, 'i', 3, 'j', 4, 'cofs', cofs);
+
 %% Setup Excitation
 Mx = @(w,xi) inv([Ey*Iy*Klib.K(w,xi)^3*[-1 1 1j -1j];
                   Ey*Iy*Klib.K(w,xi)^2*[-1 -1 1 1];
@@ -50,9 +51,11 @@ Mx = @(w,xi) inv([Ey*Iy*Klib.K(w,xi)^3*[-1 1 1j -1j];
 excs = struct('i', 2, 'nh', 1, 'rcofs', @(w,xi) Mx(w,xi)*[1/2;0;0;0], ...
     'rcofs0', [1/2;0;0;0]);
 %'nh' sets the harmonic at which to apply the excitation
+
 %% Pre-Processing
 [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib);
 Nwc = size(wcomps,1);  % Number of wave components
+
 %% Conduct Linear Forced Response Analysis
 Nw = 1000;
 Ws = linspace(0, 2e3, Nw);
@@ -63,9 +66,10 @@ for iw=1:Nw
     [Amat, ~, ~, Fv] = WVAMAT([Ws(iw);0], 1, pcs, bcs, joints, Klib);
     ACs(:,iw) = Amat\(Fv*Famp);
 end
+
 %% Plot Forced Response - EB
 opi = 5:8; 
-figure(1)
+figure()
 clf()
 
 subplot(2,1,1)

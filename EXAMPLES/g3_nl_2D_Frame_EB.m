@@ -9,7 +9,8 @@ set(0,'defaultAxesFontSize',13)
 
 %DESCRIPTION: This is a portal frame with EB members example 
 % similar to previous examples.
-% Here the angle joints are replaced with a spring-damper joint
+% Here the angle joints are replaced with nonlinear spring-damper joints.
+
 %% Setup Model
 Ey = 2.068e11;
 rho = 7842.22747;
@@ -35,23 +36,13 @@ pcs = [struct('coords',[0 0;0 H/2;0 H],'wcomps', wcomps);
 % BCs (Fix_Fix)
 bcs = [struct('i', 1, 'cofs', @(w,xi) [1 1 1 1 0 0; 1 -1 1j -1j 0 0; 0 0 0 0 1 1]);
        struct('i', 7, 'cofs', @(w,xi) [1 1 1 1 0 0; 1 -1 1j -1j 0 0; 0 0 0 0 1 1])];
-% angle-joint
-m = brd*brd*wid*rho;
-J = (brd^2 + brd^2)*m/12;
-cofs3 = @(w,xi)[ [0 0 0 0 1 1 0 0 0 0 0 0] - [0 0 0 0 0 0 1 1 1 1 0 0];%u1-v2=0
-    [0 0 0 0 0 0 0 0 0 0 1 1] + [1 1 1 1 0 0 0 0 0 0 0 0];%u2+v1=0
-    [1 -1 1j -1j 0 0 -1 1 -1j 1j 0 0];% psi1-psi2=0
-    (-Ey*Iy*Klib(1).K(w,xi)^3)*[0 0 0 0 0 0 1 -1 -1j 1j 0 0] - (Ey*Ar*Klib(2).K(w,xi))*[0 0 0 0 1j -1j 0 0 0 0 0 0] + (m*w.^2)*[0 0 0 0 1 1 0 0 0 0 0 0]; % V2-F1=0
-    (Ey*Ar*Klib(2).K(w,xi))*[0 0 0 0 0 0 0 0 0 0 1j -1j] + (-Ey*Iy*Klib(1).K(w,xi)^3)*[1 -1 -1j 1j 0 0 0 0 0 0 0 0] + (m*w.^2)*[0 0 0 0 0 0 0 0 0 0 1 1]; % F2+V1=0
-    (Ey*Iy*Klib(1).K(w,xi)^2)*[-1 -1 1 1 0 0 1 1 -1 -1 0 0] + (-0.5*brd*Ey*Iy*Klib(1).K(w,xi)^3)*[1 -1 -1j 1j 0 0 1 -1 -1j 1j 0 0] + (J*w.^2)*[1 -1 1j -1j 0 0 0 0 0 0 0 0]]; % M2-M1+(h/2 * (V1+V2)) = 0]
 
-%% Non-linear spring
+%% Non-linear spring (instead of rigid angle joints)
 h = [1; 3];
 Nt = 128;
 kJs = diag([1e9 1e9 1e9]);
 cJs = diag([5e4 5e4 5e4]);
-%gJs = diag([0 0 0]); % For linear case
-gJs = diag([1e14 1e14 0]);
+gJs = diag([5e15 5e15 0]);
 
 cofs = @(w,xi) [(-Ey*Iy*Klib(1).K(w,xi)^3)*[1 -1 -1j 1j 0 0 0 0 0 0 0 0];
     (Ey*Iy*Klib(1).K(w,xi)^2)*[1 1 -1 -1 0 0 0 0 0 0 0 0];
@@ -62,20 +53,22 @@ cofs = @(w,xi) [(-Ey*Iy*Klib(1).K(w,xi)^3)*[1 -1 -1j 1j 0 0 0 0 0 0 0 0];
 
 joints = [struct('type', 2, 'i', 3, 'j', 4, 'cofs', cofs, ...
     'nl', @(Uw) HDUFF(Uw, kJs, cJs, gJs, h, Nt), ...
-    'nldcofs', @(w,xi) [-1 -1 -1 -1 0 0 0 0 0 0 1 1; 0 0 0 0 -1 -1 1 1 1 1 0 0; Klib(1).K(w,xi)*[-1 1 -1j 1j 0 0 1 -1 1j -1j 0 0]], ...
+    'nldcofs', @(w,xi) [-1 -1 -1 -1 0 0 0 0 0 0 1 1; ...
+    0 0 0 0 -1 -1 1 1 1 1 0 0; Klib(1).K(w,xi)*[-1 1 -1j 1j 0 0 1 -1 1j -1j 0 0]], ...
     'nlfcofs', @(w,xi) [eye(3);zeros(3)]);
     struct('type', 2, 'i', 5, 'j', 6, 'cofs', cofs, ...
     'nl', @(Uw) HDUFF(Uw, kJs, cJs, gJs, h, Nt), ...
-    'nldcofs', @(w,xi) [0 0 0 0 1 1 -1 -1 -1 -1 0 0; 1 1 1 1 0 0 0 0 0 0 -1 -1; Klib(1).K(w,xi)*[1 -1 1j -1j 0 0 -1 1 -1j 1j 0 0]], ...
+    'nldcofs', @(w,xi) [0 0 0 0 1 1 -1 -1 -1 -1 0 0; ...
+    1 1 1 1 0 0 0 0 0 0 -1 -1; Klib(1).K(w,xi)*[1 -1 1j -1j 0 0 -1 1 -1j 1j 0 0]], ...
     'nlfcofs', @(w,xi) [eye(3);zeros(3)])];
 
 %% Excitation
 Mx = @(w,xi)inv([-(Ey*Iy*Klib(1).K(w,xi)^3)*[1 -1 -1j 1j 0 0];
-                 (Ey*Iy*Klib(1).K(w,xi)^2)*[1 1 -1 -1 0 0];
-                  (Ey*Ar*Klib(2).K(w,xi))*[0 0 0 0 1j -1j];
-                  [1 1 1 1 0 0];
-                  Klib(1).K(w,xi)*[1 -1 1j -1j 0 0];
-                  [0 0 0 0 1 1]]);
+    (Ey*Iy*Klib(1).K(w,xi)^2)*[1 1 -1 -1 0 0];
+    (Ey*Ar*Klib(2).K(w,xi))*[0 0 0 0 1j -1j];
+    [1 1 1 1 0 0];
+    Klib(1).K(w,xi)*[1 -1 1j -1j 0 0];
+    [0 0 0 0 1 1]]);
 
 excs = struct('i', 2, 'nh', 1, 'rcofs', @(w,xi) Mx(w,xi)*[1/2;0;0;0;0;0], ...
     'rcofs0', [1/2;0;0;0;0;0]);
@@ -91,9 +84,9 @@ Nh = length(h);
 Nhc = sum((h==0)+2*(h~=0));
 [zinds,hinds,rinds0,rinds,iinds] = HINDS(Npts*Nwc, h);
 
-Wst = 68.15; 
-Wen = 68.23; 
-dw = 0.8; 
+Wst = 65.5; 
+Wen = 65.9; 
+dw = 0.5; 
 
 Copt = struct('Nmax', 700, 'angopt', 1e-2, 'DynDscale', 1);
 Famps = 1e2*[1 5 10];
@@ -113,7 +106,7 @@ end
 
 %% Plot Results
 opi = 7:12;
-figure(1)
+figure()
 clf()
 aa = gobjects(size(Famps));
 for fi=1:length(Famps)

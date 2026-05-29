@@ -47,7 +47,7 @@ for iw=1:Nw
 end
 
 %% Plot
-figure(1)
+figure()
 clf()
 semilogy(Ws, Ds, '-')
 xlabel('Frequncy (rad/s)')

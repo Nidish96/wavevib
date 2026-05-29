@@ -88,7 +88,7 @@ end
 
 %%
 opi =  9:10;
-figure(2)
+figure()
 clf()
 for fi=1:length(Famps)
     subplot(2,1,1)

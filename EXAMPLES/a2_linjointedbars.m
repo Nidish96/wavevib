@@ -1,4 +1,3 @@
-
 clc
 clear all
 addpath('../ROUTINES/SOLVERS/')
@@ -49,6 +48,7 @@ excs = struct('i', 2, ...
 %   [I -I]*[a;b] = rcofs        represents the excitation.
 %   where "a" and "b" are the vector of wave coefficients just before and
 %   after the point of excitation.
+
 %% Preprocess Everything
 [pcs, bcs, joints, excs, Klib] = WBPREPROC(pcs, bcs, joints, excs, Klib);
 Nwc = size(wcomps,1);  % Number of wave components
@@ -74,7 +74,7 @@ end
 
 %% Plot Forced Response
 opi = 9:10;  % Output wave coefficients
-figure(1)
+figure()
 clf()
 subplot(2,1,1)
 semilogy(Ws/1e3, abs(2*sum(ACs(opi,:))));

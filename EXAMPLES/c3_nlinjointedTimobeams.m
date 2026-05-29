@@ -45,19 +45,24 @@ wcomps = [-1j 1;  % First component -> exp(-ik1 x )
 pcs = [struct('coords', [0;L0/3;L0], 'wcomps', wcomps);
     struct('coords', [L0;2*L0], 'wcomps', wcomps)];
 
-% The relations between the coefficients of deflection wave components & bending slope wave components
+% The relations between the coefficients of deflection wave components 
+% & bending slope wave components
 P = @(w, xi) Klib(1).K(w, xi) * (1 - ((w.^2) / (Klib(1).K(w, xi).^2 * Cs^2)));
 N = @(w, xi) Klib(2).K(w, xi) * (1 + ((w.^2) / (Klib(2).K(w, xi).^2 * Cs^2)));
 
 % Fixed-Fixed Boundary conditions 
-bcs = [struct('i', 1, 'cofs', @(w,xi) [1 1 1 1; -1j*P(w,xi) -1*N(w,xi) 1j*P(w,xi) 1*N(w,xi)]);
-    struct('i', 5, 'cofs', @(w,xi) [1 1 1 1; -1j*P(w,xi) -1*N(w,xi) 1j*P(w,xi) 1*N(w,xi)])];
+bcs = [struct('i', 1, 'cofs', @(w,xi) [1 1 1 1; ...
+    -1j*P(w,xi) -1*N(w,xi) 1j*P(w,xi) 1*N(w,xi)]);
+    struct('i', 5, 'cofs', @(w,xi) [1 1 1 1; ...
+    -1j*P(w,xi) -1*N(w,xi) 1j*P(w,xi) 1*N(w,xi)])];
 
 %% Excitation
-Mx = @(w,xi)inv([G*Ar*kappa*[1j*(-Klib(1).K(w,xi)+P(w,xi)) 1*(-Klib(2).K(w,xi)+N(w,xi)) 1j*(Klib(1).K(w,xi)-P(w,xi)) 1*(Klib(2).K(w,xi)-N(w,xi))];
-                  -Ey*Iy*[-1*(Klib(1).K(w,xi).*P(w,xi)) 1*(Klib(2).K(w,xi).*N(w,xi)) -1*(Klib(1).K(w,xi).*P(w,xi)) 1*(Klib(2).K(w,xi)*N(w,xi))];
-                  [1 1 1 1];
-                  [-1j*P(w,xi) -1*N(w,xi) 1j*P(w,xi) 1*N(w,xi)]]);
+Mx = @(w,xi)inv([G*Ar*kappa*[1j*(-Klib(1).K(w,xi)+P(w,xi)) 1*(-Klib(2).K(w,xi)+N(w,xi)) ...
+    1j*(Klib(1).K(w,xi)-P(w,xi)) 1*(Klib(2).K(w,xi)-N(w,xi))];
+    -Ey*Iy*[-1*(Klib(1).K(w,xi).*P(w,xi)) 1*(Klib(2).K(w,xi).*N(w,xi)) ...
+    -1*(Klib(1).K(w,xi).*P(w,xi)) 1*(Klib(2).K(w,xi)*N(w,xi))];
+    [1 1 1 1];
+    [-1j*P(w,xi) -1*N(w,xi) 1j*P(w,xi) 1*N(w,xi)]]);
 
 excs = struct('i', 2, 'nh', 1, 'rcofs', @(w,xi) Mx(w,xi)*[1/2;0;0;0], ...
     'rcofs0', [1/2;0;0;0]);
@@ -70,14 +75,21 @@ kJs = diag([1e9 1e9]);
 cJs = diag([320 320]);
 gJs = diag([1e8 0]);
 
-cofs = @(w,xi)[G*Ar*kappa*[1j*(-Klib(1).K(w,xi)+P(w,xi)) 1*(-Klib(2).K(w,xi)+N(w,xi)) 1j*(Klib(1).K(w,xi)-P(w,xi)) 1*(Klib(2).K(w,xi)-N(w,xi)) 0 0 0 0];
-    -Ey*Iy*[-1*(Klib(1).K(w,xi)*P(w,xi)) 1*(Klib(2).K(w,xi)*N(w,xi)) -1*(Klib(1).K(w,xi)*P(w,xi)) 1*(Klib(2).K(w,xi)*N(w,xi)) 0 0 0 0];
-    G*Ar*kappa*[1j*(-Klib(1).K(w,xi)+P(w,xi)) 1*(-Klib(2).K(w,xi)+N(w,xi)) 1j*(Klib(1).K(w,xi)-P(w,xi)) 1*(Klib(2).K(w,xi)-N(w,xi)) 1j*(Klib(1).K(w,xi)-P(w,xi)) 1*(Klib(2).K(w,xi)-N(w,xi)) 1j*(-Klib(1).K(w,xi)+P(w,xi)) 1*(-Klib(2).K(w,xi)+N(w,xi))];
-    -Ey*Iy*[-1*(Klib(1).K(w,xi)*P(w,xi)) 1*(Klib(2).K(w,xi)*N(w,xi)) -1*(Klib(1).K(w,xi)*P(w,xi)) 1*(Klib(2).K(w,xi)*N(w,xi)) 1*(Klib(1).K(w,xi)*P(w,xi)) -1*(Klib(2).K(w,xi)*N(w,xi)) 1*(Klib(1).K(w,xi)*P(w,xi)) -1*(Klib(2).K(w,xi)*N(w,xi))]];
+cofs = @(w,xi)[G*Ar*kappa*[1j*(-Klib(1).K(w,xi)+P(w,xi)) 1*(-Klib(2).K(w,xi)+N(w,xi)) ...
+    1j*(Klib(1).K(w,xi)-P(w,xi)) 1*(Klib(2).K(w,xi)-N(w,xi)) 0 0 0 0];
+    -Ey*Iy*[-1*(Klib(1).K(w,xi)*P(w,xi)) 1*(Klib(2).K(w,xi)*N(w,xi)) ...
+    -1*(Klib(1).K(w,xi)*P(w,xi)) 1*(Klib(2).K(w,xi)*N(w,xi)) 0 0 0 0];
+    G*Ar*kappa*[1j*(-Klib(1).K(w,xi)+P(w,xi)) 1*(-Klib(2).K(w,xi)+N(w,xi)) ...
+    1j*(Klib(1).K(w,xi)-P(w,xi)) 1*(Klib(2).K(w,xi)-N(w,xi)) 1j*(Klib(1).K(w,xi)-P(w,xi)) ...
+    1*(Klib(2).K(w,xi)-N(w,xi)) 1j*(-Klib(1).K(w,xi)+P(w,xi)) 1*(-Klib(2).K(w,xi)+N(w,xi))];
+    -Ey*Iy*[-1*(Klib(1).K(w,xi)*P(w,xi)) 1*(Klib(2).K(w,xi)*N(w,xi)) ...
+    -1*(Klib(1).K(w,xi)*P(w,xi)) 1*(Klib(2).K(w,xi)*N(w,xi)) 1*(Klib(1).K(w,xi)*P(w,xi)) ...
+    -1*(Klib(2).K(w,xi)*N(w,xi)) 1*(Klib(1).K(w,xi)*P(w,xi)) -1*(Klib(2).K(w,xi)*N(w,xi))]];
 
 joints = struct('type', 2, 'i', 3, 'j', 4, 'cofs', cofs, ...
     'nl', @(Uw) HDUFF(Uw, kJs, cJs, gJs, h, Nt), ...
-    'nldcofs', @(w,xi) [1 1 1 1 -1 -1 -1 -1; -1j*P(w,xi) -1*N(w,xi) 1j*P(w,xi) 1*N(w,xi) 1j*P(w,xi) 1*N(w,xi) -1j*P(w,xi) -1*N(w,xi)], ...
+    'nldcofs', @(w,xi) [1 1 1 1 -1 -1 -1 -1; ...
+    -1j*P(w,xi) -1*N(w,xi) 1j*P(w,xi) 1*N(w,xi) 1j*P(w,xi) 1*N(w,xi) -1j*P(w,xi) -1*N(w,xi)], ...
     'nlfcofs', @(w,xi) [eye(2);zeros(2)]);
 
 %% Pre-Processing
@@ -93,9 +105,9 @@ Nhc = sum((h==0)+2*(h~=0));
 
 Wst = 1020.8; 
 Wen = 1021.2;
-dw = 0.5;
+dw = 0.08;
 
-Copt = struct('Nmax', 300, 'angopt', 1e-1, 'DynDscale', 1);
+Copt = struct('Nmax', 300, 'angopt', 1e-1, 'DynDscale', 1, 'solverchoice', 3);
 Famps = 2e3*[1 10 20];
 acC = cell(size(Famps));
 for fi=1:length(Famps)
@@ -114,7 +126,7 @@ end
 
 %% Plot Results
 opi = 5:8;
-figure(2)
+figure()
 clf()
 aa = gobjects(size(Famps));
 for fi=1:length(Famps)
